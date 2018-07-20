@@ -1,9 +1,6 @@
 package org.astormofminds.icfpc2018.io;
 
-import org.astormofminds.icfpc2018.model.Command;
-import org.astormofminds.icfpc2018.model.Coordinate;
-import org.astormofminds.icfpc2018.model.Difference;
-import org.astormofminds.icfpc2018.model.State;
+import org.astormofminds.icfpc2018.model.*;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -11,23 +8,23 @@ import java.util.List;
 
 public class Binary {
 
-    public static State readModel(InputStream in) throws IOException {
+    public static Matrix readModel(InputStream in) throws IOException {
         int resolution = in.read();
         if (resolution <= 0 || resolution > 250) {
             throw new IOException("invalid resolution (corrupt model file?): " + resolution);
         }
-        State state = new State(resolution);
+        Matrix matrix = new Matrix(resolution);
         BitInputStream bits = new BitInputStream(in);
         for (int x = 0; x < resolution; x++) {
             for (int y = 0; y < resolution; y++) {
                 for (int z = 0; z < resolution; z++) {
                     if (bits.nextBit()) {
-                        state.fill(Coordinate.of(x, y, z));
+                        matrix.fill(Coordinate.of(x, y, z));
                     }
                 }
             }
         }
-        return state;
+        return matrix;
     }
 
     public static List<Command> readTrace(InputStream in) throws IOException {

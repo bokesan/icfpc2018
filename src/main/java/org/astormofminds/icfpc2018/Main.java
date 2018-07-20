@@ -2,7 +2,10 @@ package org.astormofminds.icfpc2018;
 
 import org.astormofminds.icfpc2018.io.Binary;
 import org.astormofminds.icfpc2018.model.Command;
+import org.astormofminds.icfpc2018.model.Matrix;
 import org.astormofminds.icfpc2018.model.State;
+import org.astormofminds.icfpc2018.solver.Solver;
+import org.astormofminds.icfpc2018.solver.SolverFactory;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,9 +37,23 @@ public class Main {
                 }
                 exec(args[1], args[2]);
                 break;
+            case "solve":
+                if (args.length != 4) {
+                    usage(1);
+                }
+                solve(args[1], args[2], args[3]);
+                break;
             default:
                 usage(1);
         }
+    }
+
+    private static void solve(String modelFile, String traceFile, String solverName) throws IOException {
+        Solver solver = SolverFactory.byName(solverName);
+        Matrix model = Binary.readModel(new FileInputStream(modelFile));
+        solver.init(model);
+        List<Command> trace = solver.getCompleteTrace();
+        Binary.writeTrace(traceFile, trace);
     }
 
     private static void usage(int exitCode) {
@@ -59,8 +76,8 @@ public class Main {
 
     private static void checkModel(String file) throws IOException {
         try (InputStream in = new FileInputStream(file)) {
-            State model = Binary.readModel(in);
-            System.out.println("Model successfully read: " + model);
+            Matrix model = Binary.readModel(in);
+            System.out.println("Model successfully read");
         }
     }
 
