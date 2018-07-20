@@ -95,6 +95,32 @@ public class Command {
         return new Command(Op.FUSIONS, nd, null, 0);
     }
 
+    public Op getOp() {
+        return op;
+    }
+
+    public Difference getD1() {
+        return d1;
+    }
+
+    public Difference getD2() {
+        return d2;
+    }
+
+    public int getM() {
+        return m;
+    }
+
+    public Coordinate getFusionPosition(Coordinate c) {
+        switch (op) {
+            case FUSIONP:
+            case FUSIONS:
+                return c.plus(d1);
+            default:
+                return null;
+        }
+    }
+
     public String toString() {
         switch (op) {
             case HALT: return "Halt";

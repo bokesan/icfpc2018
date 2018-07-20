@@ -68,6 +68,9 @@ public class Coordinate {
         return of(x, y, z + 1);
     }
 
+    public boolean isOrigin() {
+        return x == 0 && y == 0 && z == 0;
+    }
 
     public boolean isAdjacentTo(Coordinate c) {
         return (x == c.x && y == c.y && Math.abs(z - c.z) == 1) ||

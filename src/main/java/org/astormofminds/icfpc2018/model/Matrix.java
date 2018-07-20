@@ -53,8 +53,19 @@ public class Matrix {
         return isFull(c) ? VoxelState.FULL : VoxelState.VOID;
     }
 
-    public void fill(Coordinate c) {
-        voxels.set(index(c));
+    /**
+     * Set the voxel at c to FULL.
+     * @return {@code true} is the old state of the voxel was VOID,
+     * {@code false} if it was already FULL.
+     */
+    public boolean fill(Coordinate c) {
+        int i = index(c);
+        if (voxels.get(i)) {
+            return false;
+        } else {
+            voxels.set(i);
+            return true;
+        }
     }
 
     public int numFilled() {
@@ -118,5 +129,23 @@ public class Matrix {
             }
         }
         return builder.build();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Matrix matrix = (Matrix) o;
+
+        if (resolution != matrix.resolution) return false;
+        return voxels.equals(matrix.voxels);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = resolution;
+        result = 31 * result + voxels.hashCode();
+        return result;
     }
 }

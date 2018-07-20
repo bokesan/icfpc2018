@@ -82,7 +82,7 @@ public class Main {
     }
 
 
-    private static final int EXCERT_SIZE = 10;
+    private static final int EXCERPT_SIZE = 10;
 
     private static void checkTrace(String file) throws IOException {
         try (InputStream in = new FileInputStream(file)) {
@@ -91,12 +91,12 @@ public class Main {
             int n = trace.size();
             int head;
             int tail;
-            if (n <= 2 * EXCERT_SIZE) {
+            if (n <= 2 * EXCERPT_SIZE) {
                 head = n;
                 tail = 0;
             } else {
-                head = EXCERT_SIZE;
-                tail = n - EXCERT_SIZE;
+                head = EXCERPT_SIZE;
+                tail = n - EXCERPT_SIZE;
             }
             for (int i = 0; i < head; i++) {
                 System.out.format("%5d: %s\n", i, trace.get(i));
@@ -110,8 +110,27 @@ public class Main {
         }
     }
 
-    private static void exec(String modelFile, String traceFile) {
-        throw new AssertionError("not yet implmented");
+    private static void exec(String modelFile, String traceFile) throws IOException {
+        try (InputStream ms = new FileInputStream(modelFile);
+             InputStream ts = new FileInputStream(traceFile)) {
+            Matrix model = Binary.readModel(ms);
+            List<Command> trace = Binary.readTrace(ts);
+            State state = new State(model.getResolution(), trace);
+            long t0 = System.nanoTime();
+            for (;;) {
+                if (!state.timeStep()) {
+                    break;
+                }
+            }
+            long elapsed = System.nanoTime() - t0;
+            if (state.equalsTarget(model)) {
+                System.out.println("Target matched!");
+            } else {
+                System.out.println("Duh. Target is different.");
+            }
+            System.out.println("Finale state: " + state);
+            System.out.format("Elapsed time: %.1f ms\n", elapsed / 1.0e6);
+        }
     }
 
 }

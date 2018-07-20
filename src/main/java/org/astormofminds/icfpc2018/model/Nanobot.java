@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Nanobot {
+public class Nanobot implements Comparable<Nanobot> {
 
     private final int bid;
     private Coordinate pos;
@@ -32,6 +32,10 @@ public class Nanobot {
         return pos;
     }
 
+    public void setPos(Coordinate c) {
+        pos = c;
+    }
+
     public Set<Integer> getSeeds() {
         return Collections.unmodifiableSet(seeds);
     }
@@ -49,5 +53,10 @@ public class Nanobot {
     @Override
     public int hashCode() {
         return bid;
+    }
+
+    @Override
+    public int compareTo(Nanobot o) {
+        return Integer.compare(bid, o.bid);
     }
 }
