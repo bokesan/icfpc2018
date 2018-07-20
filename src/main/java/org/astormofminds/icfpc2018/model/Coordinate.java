@@ -26,6 +26,49 @@ public class Coordinate {
         return of(x - d.dx, y - d.dy, z - d.dz);
     }
 
+    /**
+     * Get the coordinate to the left of this coordinate (may be invalid).
+     */
+    public Coordinate left() {
+        return of(x - 1, y, z);
+    }
+
+    /**
+     * Get the coordinate to the right of this coordinate (may be invalid).
+     */
+    public Coordinate right() {
+        return of(x + 1, y, z);
+    }
+
+    /**
+     * Get the coordinate above this coordinate (may be invalid).
+     */
+    public Coordinate above() {
+        return of(x, y + 1, z);
+    }
+
+    /**
+     * Get the coordinate below this coordinate (may be invalid).
+     */
+    public Coordinate below() {
+        return of(x, y - 1, z);
+    }
+
+    /**
+     * Get the coordinate before (in front of) this coordinate (may be invalid).
+     */
+    public Coordinate before() {
+        return of(x, y, z - 1);
+    }
+
+    /**
+     * Get the coordinate behind this coordinate (may be invalid).
+     */
+    public Coordinate behind() {
+        return of(x, y, z + 1);
+    }
+
+
     public boolean isAdjacentTo(Coordinate c) {
         return (x == c.x && y == c.y && Math.abs(z - c.z) == 1) ||
                (x == c.x && Math.abs(y - c.y) == 1 && z == c.z) ||

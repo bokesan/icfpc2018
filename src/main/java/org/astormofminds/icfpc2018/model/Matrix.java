@@ -1,6 +1,7 @@
 package org.astormofminds.icfpc2018.model;
 
-import java.util.BitSet;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class Matrix {
 
@@ -23,15 +24,25 @@ public class Matrix {
             throw new IllegalArgumentException("coordinate out of bounds (r=" + resolution + "): " + c);
     }
 
+    private int index(int x, int y, int z) {
+        return resolution * resolution * x + resolution * y + z;
+    }
+
     private int index(Coordinate c) {
         check(c);
-        return resolution * resolution * c.x
-                + resolution * c.y
-                + c.z;
+        return index(c.x, c.y, c.z);
+    }
+
+    private boolean isFull(int x, int y, int z) {
+        return voxels.get(index(x, y, z));
+    }
+
+    public boolean isFull(Coordinate c) {
+        return voxels.get(index(c));
     }
 
     public VoxelState get(Coordinate c) {
-        return voxels.get(index(c)) ? VoxelState.FULL : VoxelState.VOID;
+        return isFull(c) ? VoxelState.FULL : VoxelState.VOID;
     }
 
     public void fill(Coordinate c) {
@@ -42,8 +53,54 @@ public class Matrix {
         return voxels.cardinality();
     }
 
+    public boolean isValid(Coordinate c) {
+        return c.x >= 0 && c.x < resolution
+                && c.y >= 0 && c.y < resolution
+                && c.z >= 0 && c.z < resolution;
+    }
+
     public boolean isGrounded(Coordinate c) {
-        // TODO
-        throw new AssertionError("not implemented");
+        if (get(c) != VoxelState.FULL) {
+            throw new IllegalArgumentException("VOID voxel: " + c);
+        }
+        Set<Coordinate> visited = new HashSet<>();
+        Stack<Coordinate> stack = new Stack<>();
+        stack.push(c);
+        while (!stack.empty()) {
+            Coordinate c1 = stack.pop();
+            if (c1.y == 0) {
+                return true;
+            }
+            if (visited.add(c1)) {
+                tryNeighbor(stack, c1.below());
+                tryNeighbor(stack, c1.left());
+                tryNeighbor(stack, c1.before());
+                tryNeighbor(stack, c1.right());
+                tryNeighbor(stack, c1.behind());
+                tryNeighbor(stack, c1.above());
+            }
+        }
+        return false;
+    }
+
+    private void tryNeighbor(Stack<Coordinate> stack, Coordinate voxel) {
+        if (isValid(voxel) && isFull(voxel)) {
+            stack.push(voxel);
+        }
+    }
+
+    /**
+     * Get full voxels on given y-plane.
+     */
+    public Stream<Coordinate> filled(int y) {
+        Stream.Builder<Coordinate> builder = Stream.builder();
+        for (int x = 1; x < resolution - 1; x++) {
+            for (int z = 1; z < resolution - 1; z++) {
+                if (isFull(x, 0, z)) {
+                    builder.accept(Coordinate.of(x, 0, z));
+                }
+            }
+        }
+        return builder.build();
     }
 }
