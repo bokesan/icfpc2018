@@ -1,19 +1,19 @@
 package org.astormofminds.icfpc2018.model;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class Nanobot implements Comparable<Nanobot> {
 
     private final int bid;
     private Coordinate pos;
-    private final Set<Integer> seeds;
+    private final TreeSet<Integer> seeds;
 
     private Nanobot(int bid) {
         this.bid = bid;
         this.pos = Coordinate.ORIGIN;
-        this.seeds = new HashSet<>();
+        this.seeds = new TreeSet<>();
     }
 
     public static Nanobot initial() {
@@ -38,6 +38,21 @@ public class Nanobot implements Comparable<Nanobot> {
 
     public Set<Integer> getSeeds() {
         return Collections.unmodifiableSet(seeds);
+    }
+
+    public Nanobot fissure(Coordinate c, int m) {
+        assert !seeds.isEmpty();
+        Nanobot b1 = new Nanobot(seeds.pollFirst());
+        b1.pos = c;
+        for (int i = 0; i < m; i++) {
+            b1.seeds.add(seeds.pollFirst());
+        }
+        return b1;
+    }
+
+    public void fuseWith(Nanobot b1) {
+        seeds.add(b1.bid);
+        seeds.addAll(b1.seeds);
     }
 
     @Override

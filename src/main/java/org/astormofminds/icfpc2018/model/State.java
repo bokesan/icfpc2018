@@ -114,9 +114,33 @@ public class State {
                     }
                     break;
                 case FISSION:
+                    Difference nd = cmd.getD1();
+                    int m = cmd.getM();
+                    int n = bot.getSeeds().size();
+                    if (n == 0 || n <= m) {
+                        throw new ExecutionException("Fission: too few seeds");
+                    }
+                    c1 = c.plus(nd);
+                    bots.add(bot.fissure(c1, m));
+                    energy += 24;
+                    break;
                 case FUSIONP:
                 case FUSIONS:
-                    throw new AssertionError("command not implemented: " + cmd);
+                    if (group.size() != 2) {
+                        throw new ExecutionException("invalid fusion group size: " + group.size());
+                    }
+                    BotCommand bcs;
+                    if (cmd.getOp() == Command.Op.FUSIONP) {
+                        bcs = group.get(1);
+                    } else {
+                        bcs = bc;
+                        bc = group.get(1);
+                        bot = bc.bot;
+                    }
+                    bots.remove(bcs.bot);
+                    bot.fuseWith(bcs.bot);
+                    energy -= 24;
+                    break;
             }
         }
         steps++;
