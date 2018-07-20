@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class State {
 
@@ -52,21 +53,23 @@ public class State {
      * {@code false} if the system is halted after the time step.
      */
     public boolean timeStep() {
-        logger.trace("timeStep");
-        if (!isWellFormed()) {
-            throw new ExecutionException("not well-formed");
+        if ((steps & 8191) == 0) {
+            logger.info("steps: " + steps);
+            if (!isWellFormed()) {
+                throw new ExecutionException("not well-formed");
+            }
         }
         if (bots.isEmpty()) {
             throw new ExecutionException("system is halted");
         }
-        List<BotCommand> botCommands = new ArrayList<>();
+        Stream.Builder<BotCommand> botCommands = Stream.builder();
         for (Nanobot bot : bots) {
             BotCommand bc = new BotCommand();
             bc.bot = bot;
             bc.command = trace.removeFirst();
             botCommands.add(bc);
         }
-        Collection<List<BotCommand>> groups = botCommands.stream()
+        Collection<List<BotCommand>> groups = botCommands.build()
                 .collect(Collectors.groupingBy(GroupKey::new))
                 .values();
 

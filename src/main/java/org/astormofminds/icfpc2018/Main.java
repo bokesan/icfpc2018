@@ -6,13 +6,18 @@ import org.astormofminds.icfpc2018.model.Matrix;
 import org.astormofminds.icfpc2018.model.State;
 import org.astormofminds.icfpc2018.solver.Solver;
 import org.astormofminds.icfpc2018.solver.SolverFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 public class Main {
+
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     private static final String prog = "asof";
 
@@ -84,7 +89,7 @@ public class Main {
     private static final int EXCERPT_SIZE = 10;
 
     private static void checkTrace(String file) throws IOException {
-        try (InputStream in = new FileInputStream(file)) {
+        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
             List<Command> trace = Binary.readTrace(in);
             System.out.println("Trace successfully read:");
             int n = trace.size();
@@ -110,9 +115,11 @@ public class Main {
     }
 
     private static void exec(String modelFile, String traceFile) throws IOException {
-        try (InputStream ms = new FileInputStream(modelFile);
-             InputStream ts = new FileInputStream(traceFile)) {
+        try (InputStream ms = new BufferedInputStream(new FileInputStream(modelFile));
+             InputStream ts = new BufferedInputStream(new FileInputStream(traceFile))) {
+            logger.info("loading target model...");
             Matrix model = Binary.readModel(ms);
+            logger.info("loading trace...");
             List<Command> trace = Binary.readTrace(ts);
             State state = new State(model.getResolution(), trace);
             long t0 = System.nanoTime();
