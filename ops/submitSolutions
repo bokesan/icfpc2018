@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ ! -f link.txt ]; then
+	echo "URL file link.txt not found!"
+	exit 1
+fi
+
+if [ ! -f sha.txt ]; then
+	echo "SHA file sha.txt not found!"
+	exit 1
+fi
+
+if [ ! -f privateID ]; then
+	echo "privateID file not found!"
+	exit 1
+fi
+
+if [ ! -f file.txt ]; then
+	echo "file.txt not found!"
+	exit 1
+fi
+
+FILE=`cat file.txt`
+URL=`cat link.txt`
+SHA=`cat sha.txt`
+KEY=`cat privateID`
+
+echo "waiting for dropbox sync on ${FILE}"
+STATUS=`dropbox filestatus ${FILE}`
+while [ "${STATUS}" != "${FILE}: up to date" ]
+do
+	echo "status is ${STATUS} - waiting 5 seconds"
+	sleep 5
+	STATUS=`dropbox filestatus ${FILE}`	
+done
+echo "status is ${STATUS}"
+
+echo "Submitting solutions via API..."
+
+curl -L \
+  --data-urlencode action=submit \
+  --data-urlencode privateID=${KEY} \
+  --data-urlencode submissionURL=${URL} \
+  --data-urlencode submissionSHA=${SHA} \
+  https://script.google.com/macros/s/AKfycbzQ7Etsj7NXCN5thGthCvApancl5vni5SFsb1UoKgZQwTzXlrH7/exec
