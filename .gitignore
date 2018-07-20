@@ -12,6 +12,8 @@
 
 # IDE stuff
 .idea/
+.gradle/
+build/
 
 # Package Files #
 *.jar
