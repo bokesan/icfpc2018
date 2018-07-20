@@ -119,4 +119,28 @@ public class Matrix {
         }
         return builder.build();
     }
+
+    /**
+     * Get the minimal region covering all filled voxels
+     */
+    public Region getBoundingBox() {
+        int xmin = resolution, ymin = resolution, zmin = resolution;
+        int xmax = 0, ymax = 0, zmax = 0;
+        for (int x = 1; x < resolution - 1; x++) {
+            for (int y = 0; y < resolution - 1; y++) {
+                for (int z = 1; z < resolution - 1; z++) {
+                    if (isFull(x, y, z)) {
+                        xmin = Math.min(xmin, x);
+                        ymin = Math.min(ymin, y);
+                        zmin = Math.min(zmin, z);
+                        xmax = Math.max(xmax, x);
+                        ymax = Math.max(ymax, y);
+                        zmax = Math.max(zmax, z);
+                    }
+                }
+
+            }
+        }
+        return Region.of(Coordinate.of(xmin, ymin, zmin), Coordinate.of(xmax, ymax, zmax));
+    }
 }
