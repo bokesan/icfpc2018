@@ -8,7 +8,6 @@ import org.astormofminds.icfpc2018.solver.Solver;
 import org.astormofminds.icfpc2018.solver.SolverFactory;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -123,10 +122,10 @@ public class Main {
                 }
             }
             long elapsed = System.nanoTime() - t0;
-            if (state.equalsTarget(model)) {
-                System.out.println("Target matched!");
+            if (state.isValidFinalState(model)) {
+                System.out.println("Trace correct.");
             } else {
-                System.out.println("Duh. Target is different.");
+                System.out.println("Trace invalid.");
             }
             System.out.println("Finale state: " + state);
             System.out.format("Elapsed time: %.1f ms\n", elapsed / 1.0e6);

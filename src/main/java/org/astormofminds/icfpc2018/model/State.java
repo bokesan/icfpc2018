@@ -29,8 +29,11 @@ public class State {
         return matrix.getResolution();
     }
 
-    public boolean equalsTarget(Matrix target) {
-        return matrix.equals(target);
+    public boolean isValidFinalState(Matrix target) {
+        return harmonics == HarmonicsState.LOW
+                && matrix.equals(target)
+                && bots.isEmpty()
+                && trace.isEmpty();
     }
 
     private int getSize() {
