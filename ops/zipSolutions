@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+	echo "Must have exactly 1 argument for the source directory"
+	exit 1
+fi
+
+if [ ! -f privateID ]; then
+	echo "No privateID found, not using encryption"
+	echo "Creating solutions.zip with solution files from '$1'"
+	zip -r -j -q solutions.zip "$1"
+else
+	echo "Using privateID to encrypt"
+	KEY=`cat privateID`
+	zip -r -j -q solutions.zip "$1" --password ${KEY}
+fi
+
+

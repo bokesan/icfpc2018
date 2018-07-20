@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ ! -f solutions.zip ]; then
+	echo "Solutions file solutions.zip not found!"
+	exit 1
+fi
+
+echo "moving solutions to dropbox"
+TIME=`date +%Y%M%d%H%m%S`
+FILE=~/Dropbox/icfpc_2018_submissions/${TIME}_solutions.zip
+cp solutions.zip $FILE
+echo "File is ${FILE}"
+echo "${FILE}" > file.txt
+
+SHA=($(shasum -a 256 ${FILE}))
+echo "Sha is '$SHA'"
+echo "$SHA" > sha.txt
+
+LINK=`dropbox sharelink ~/Dropbox/icfpc_2018_submissions/"$TIME"_solutions.zip`
+echo "Link is '$LINK'"
+echo "$LINK" > link.txt
+

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+	echo "Must have exactly 1 argument for the source directory"
+	exit 1
+fi
+
+./zipSolutions $1
+
+./uploadSolutions
+
+rm -f solutions.zip
+
+./submitSolutions
+
+rm -f sha.txt file.txt link.txt
