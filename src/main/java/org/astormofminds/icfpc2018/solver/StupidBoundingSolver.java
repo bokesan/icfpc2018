@@ -91,7 +91,7 @@ public class StupidBoundingSolver implements Solver {
                 }
 
                 // move one up, unless it is the last run through
-                if (y < resolution - 1) {
+                if (y < ymax + 1) {
                     result.add(Command.UP);
                 }
             } else {
@@ -157,7 +157,7 @@ public class StupidBoundingSolver implements Solver {
             result.add(Command.DOWN);
         }
         //move back to left
-        if ((zmax - zmin) % 2 == 0) {
+        if (((ymax - ymin) + (zmax - zmin)) % 2 == 0) {
             for (int x = xmax; x > 0; x--) {
                 result.add(Command.LEFT);
             }

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+SOLVER=$1
+mkdir ~/git/icfpc2018/solutions/lightning/${SOLVER}
+echo "Created ~/git/icfpc2018/solutions/lightning/${SOLVER}"
+
+for file in /home/dreske/git/icfpc2018/task/problems_lightning/*.mdl; do
+	[ -e "$file" ] || continue
+	TARGET=`echo ${file} | sed "s/.*\///" | cut -d'_' -f 1`
+	TARGET="/home/dreske/git/icfpc2018/solutions/lightning/${SOLVER}/${TARGET}.nbt"
+	java -jar /home/dreske/git/icfpc2018/build/libs/icfpc2018-0.0.1.jar solve ${file} ${TARGET} ${SOLVER}
+	echo "Created ${TARGET}"
+done
