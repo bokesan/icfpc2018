@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'findbugs'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+version = '0.0.1'
+description = 'ICFPC 2018 Entry'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+jar {
+    baseName = 'icfpc2018'
+    manifest {
+        attributes(
+                'Implementation-Title': 'ICFPC 2018',
+                'Implementation-Vendor': 'A Storm of Minds',
+                'Implementation-Version': version,
+                'Main-Class': 'org.astormofminds.icfpc2018.Main')
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+findbugs {
+    sourceSets = [sourceSets.main]
+    ignoreFailures = true
+    effort = "max"
+    reportLevel = "low"
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "com.google.guava:guava:25.1-jre"
+
+    testCompile 'junit:junit:4.12'
+}
