@@ -28,6 +28,14 @@ public class Matrix {
         return resolution * resolution * x + resolution * y + z;
     }
 
+    private Coordinate toCoordinate(int index) {
+        int z = index % resolution;
+        int i = index / resolution;
+        int y = i % resolution;
+        int x = i / resolution;
+        return Coordinate.of(x, y, z);
+    }
+
     private int index(Coordinate c) {
         check(c);
         return index(c.x, c.y, c.z);
@@ -87,6 +95,14 @@ public class Matrix {
         if (isValid(voxel) && isFull(voxel)) {
             stack.push(voxel);
         }
+    }
+
+    /**
+     * Get all full voxel coordinates.
+     */
+    public Stream<Coordinate> filled() {
+        Stream.Builder<Coordinate> builder = Stream.builder();
+        return voxels.stream().mapToObj(this::toCoordinate);
     }
 
     /**

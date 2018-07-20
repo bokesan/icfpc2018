@@ -17,14 +17,32 @@ public class State {
         matrix = new Matrix(resolution);
     }
 
+    public int getResolution() {
+        return matrix.getResolution();
+    }
+
     public void fill(Coordinate c) {
         matrix.fill(c);
     }
 
+    public boolean isWellFormed() {
+        if (harmonics == HarmonicsState.LOW) {
+            if (!matrix.filled().allMatch(matrix::isGrounded)) {
+                return false;
+            }
+        }
+        if (bots.stream().anyMatch(b -> matrix.isFull(b.getPos()))) {
+            return false;
+        }
+        // TODO: more conditions
+        return true;
+    }
+
+
     public String toString() {
         return "State{energy=" + energy
                 + ", harmonics=" + harmonics
-                + ", resolution=" + matrix.getResolution()
+                + ", resolution=" + getResolution()
                 + ", filled=" + matrix.numFilled()
                 + ", bots=" + bots.size()
                 + ", trace=" + trace.size()

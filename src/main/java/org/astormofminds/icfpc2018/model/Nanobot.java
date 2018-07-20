@@ -1,5 +1,6 @@
 package org.astormofminds.icfpc2018.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,4 +24,30 @@ public class Nanobot {
         return bot;
     }
 
+    public int getBid() {
+        return bid;
+    }
+
+    public Coordinate getPos() {
+        return pos;
+    }
+
+    public Set<Integer> getSeeds() {
+        return Collections.unmodifiableSet(seeds);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Nanobot nanobot = (Nanobot) o;
+
+        return bid == nanobot.bid;
+    }
+
+    @Override
+    public int hashCode() {
+        return bid;
+    }
 }
