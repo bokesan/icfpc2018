@@ -5,8 +5,7 @@ import org.astormofminds.icfpc2018.model.Coordinate;
 import org.astormofminds.icfpc2018.model.Difference;
 import org.astormofminds.icfpc2018.model.State;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +82,21 @@ public class Binary {
             trace.add(command);
         }
         return trace;
+    }
+
+    public static void writeTrace(String filename, Iterable<Command> trace) throws IOException {
+        if (!filename.endsWith(".nbt")) {
+            throw new IllegalArgumentException("invalid trace file name (should end with '.nbt'): " + filename);
+        }
+        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(filename))) {
+            writeTrace(out, trace);
+        }
+    }
+
+    public static void writeTrace(OutputStream out, Iterable<Command> trace) throws IOException {
+        for (Command cmd : trace) {
+            cmd.encode(out);
+        }
     }
 
     private static Difference decodeNd(int i) {

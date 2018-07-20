@@ -1,5 +1,8 @@
 package org.astormofminds.icfpc2018.model;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 public class Command {
 
     public static final Command HALT = new Command(Op.HALT);
@@ -101,4 +104,38 @@ public class Command {
         }
     }
 
+    public void encode(OutputStream out) throws IOException {
+        switch (op) {
+            case HALT: out.write(255); break;
+            case WAIT: out.write(254); break;
+            case FLIP: out.write(253); break;
+            case SMOVE:
+                out.write((d1.axis() << 4) | 0b0100);
+                out.write(d1.delta() + 15);
+                break;
+            case LMOVE:
+                out.write((d1.axis() << 4) | (d2.axis() << 6) | 0b1100);
+                out.write((d1.delta() + 5) | ((d2.delta() + 5) << 4));
+                break;
+            case FUSIONP:
+                out.write((encodeNd(d1) << 3) | 0b111);
+                break;
+            case FUSIONS:
+                out.write((encodeNd(d1) << 3) | 0b110);
+                break;
+            case FISSION:
+                out.write((encodeNd(d1) << 3) | 0b101);
+                out.write(m);
+                break;
+            case FILL:
+                out.write((encodeNd(d1) << 3) | 0b011);
+                break;
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    private int encodeNd(Difference nd) {
+        return 9 * (nd.dx + 1) + 3 * (nd.dy + 1) + (nd.dz + 1);
+    }
 }

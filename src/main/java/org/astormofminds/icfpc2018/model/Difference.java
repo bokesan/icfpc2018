@@ -37,6 +37,24 @@ public class Difference {
         return Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)));
     }
 
+    /**
+     * Get Axis of linear difference. 1 = x, 2 = y, 3 = z.
+     */
+    public int axis() {
+        if (dx != 0) return 1;
+        if (dy != 0) return 2;
+        return 3;
+    }
+
+    /**
+     * Get delta of linear difference.
+     */
+    public int delta() {
+        if (dx != 0) return dx;
+        if (dy != 0) return dy;
+        return dz;
+    }
+
     public boolean isLinear() {
         return (dx != 0 && dy == 0 && dz == 0) ||
                (dx == 0 && dy != 0 && dz == 0) ||
