@@ -70,8 +70,8 @@ public class State {
                 .collect(Collectors.groupingBy(GroupKey::new))
                 .values();
 
-        energy += ((harmonics == HarmonicsState.LOW) ? 3 : 30) * getSize();
-        energy += 20 * bots.size();
+        energy += ((harmonics == HarmonicsState.LOW) ? 3L : 30L) * getSize();
+        energy += 20L * bots.size();
         for (List<BotCommand> group : groups) {
             BotCommand bc = group.get(0);
             Nanobot bot = bc.bot;
@@ -102,11 +102,11 @@ public class State {
                     break;
                 case SMOVE:
                     bot.setPos(c.plus(cmd.getD1()));
-                    energy += 2 * cmd.getD1().mlen();
+                    energy += 2L * cmd.getD1().mlen();
                     break;
                 case LMOVE:
                     bot.setPos(c.plus(cmd.getD1()).plus(cmd.getD2()));
-                    energy += 2 * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
+                    energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
                     break;
                 case FILL:
                     Coordinate c1 = c.plus(cmd.getD1());

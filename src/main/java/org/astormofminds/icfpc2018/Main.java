@@ -76,7 +76,7 @@ public class Main {
     private static void checkModel(String file) throws IOException {
         try (InputStream in = new FileInputStream(file)) {
             Matrix model = Binary.readModel(in);
-            System.out.println("Model successfully read");
+            System.out.println("Model successfully read: " + model);
         }
     }
 
@@ -98,12 +98,12 @@ public class Main {
                 tail = n - EXCERPT_SIZE;
             }
             for (int i = 0; i < head; i++) {
-                System.out.format("%5d: %s\n", i, trace.get(i));
+                System.out.format("%5d: %s%n", i, trace.get(i));
             }
             if (tail > 0) {
                 System.out.println("...");
                 for (int i = tail; i < n; i++) {
-                    System.out.format("%5d: %s\n", i, trace.get(i));
+                    System.out.format("%5d: %s%n", i, trace.get(i));
                 }
             }
         }
@@ -128,7 +128,7 @@ public class Main {
                 System.out.println("Trace invalid.");
             }
             System.out.println("Finale state: " + state);
-            System.out.format("Elapsed time: %.1f ms\n", elapsed / 1.0e6);
+            System.out.format("Elapsed time: %.1f ms%n", elapsed / 1.0e6);
         }
     }
 

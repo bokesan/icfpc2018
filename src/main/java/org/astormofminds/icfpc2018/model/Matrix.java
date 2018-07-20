@@ -112,7 +112,6 @@ public class Matrix {
      * Get all full voxel coordinates.
      */
     public Stream<Coordinate> filled() {
-        Stream.Builder<Coordinate> builder = Stream.builder();
         return voxels.stream().mapToObj(this::toCoordinate);
     }
 
@@ -171,6 +170,10 @@ public class Matrix {
         int result = resolution;
         result = 31 * result + voxels.hashCode();
         return result;
+    }
+
+    public String toString() {
+        return "Matrix{r=" + getResolution() + ", filled=" + numFilled() + "}";
     }
 
 }
