@@ -9,6 +9,13 @@ public class Command {
     public static final Command WAIT = new Command(Op.WAIT);
     public static final Command FLIP = new Command(Op.FLIP);
 
+    public static final Command RIGHT = Command.sMove(Difference.of(1, 0, 0));
+    public static final Command LEFT = Command.sMove(Difference.of(-1, 0, 0));
+    public static final Command UP = Command.sMove(Difference.of(0, 1, 0));
+    public static final Command DOWN = Command.sMove(Difference.of(0, -1, 0));
+    public static final Command FAR = Command.sMove(Difference.of(0, 0, 1));
+    public static final Command NEAR = Command.sMove(Difference.of(0, 0, -1));
+
     public enum Op {
         HALT,
         WAIT,
