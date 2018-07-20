@@ -23,7 +23,6 @@ public class Difference {
         return of(c.x - c1.x, c.y - c1.y, c.z - c1.z);
     }
 
-
     /**
      * Manhattan length.
      */

@@ -1,12 +1,14 @@
 package org.astormofminds.icfpc2018;
 
 import org.astormofminds.icfpc2018.io.Binary;
+import org.astormofminds.icfpc2018.model.Command;
 import org.astormofminds.icfpc2018.model.State;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class Main {
 
@@ -48,6 +50,8 @@ public class Main {
     private static void check(String file) throws IOException {
         if (file.endsWith(".mdl")) {
             checkModel(file);
+        } else if (file.endsWith(".nbt")) {
+            checkTrace(file);
         } else {
             throw new AssertionError("file type not yet supported: " + file);
         }
@@ -57,6 +61,35 @@ public class Main {
         try (InputStream in = new FileInputStream(file)) {
             State model = Binary.readModel(in);
             System.out.println("Model successfully read: " + model);
+        }
+    }
+
+
+    private static final int EXCERT_SIZE = 10;
+
+    private static void checkTrace(String file) throws IOException {
+        try (InputStream in = new FileInputStream(file)) {
+            List<Command> trace = Binary.readTrace(in);
+            System.out.println("Trace successfully read:");
+            int n = trace.size();
+            int head;
+            int tail;
+            if (n <= 2 * EXCERT_SIZE) {
+                head = n;
+                tail = 0;
+            } else {
+                head = EXCERT_SIZE;
+                tail = n - EXCERT_SIZE;
+            }
+            for (int i = 0; i < head; i++) {
+                System.out.format("%5d: %s\n", i, trace.get(i));
+            }
+            if (tail > 0) {
+                System.out.println("...");
+                for (int i = tail; i < n; i++) {
+                    System.out.format("%5d: %s\n", i, trace.get(i));
+                }
+            }
         }
     }
 
