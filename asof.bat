@@ -1,0 +1,1 @@
+java -jar build\libs\icfpc2018-0.0.1.jar %1 %2 %3

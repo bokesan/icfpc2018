@@ -12,6 +12,10 @@ public class Matrix {
         this.voxels = new BitSet(resolution * resolution * resolution);
     }
 
+    public int getResolution() {
+        return resolution;
+    }
+
     private void check(Coordinate c) {
         if (c.x < 0 || c.x >= resolution
             || c.y < 0 || c.y >= resolution
@@ -21,9 +25,9 @@ public class Matrix {
 
     private int index(Coordinate c) {
         check(c);
-        return resolution * resolution * c.y
-                + resolution * c.z
-                + c.x;
+        return resolution * resolution * c.x
+                + resolution * c.y
+                + c.z;
     }
 
     public VoxelState get(Coordinate c) {
@@ -32,6 +36,10 @@ public class Matrix {
 
     public void fill(Coordinate c) {
         voxels.set(index(c));
+    }
+
+    public int numFilled() {
+        return voxels.cardinality();
     }
 
     public boolean isGrounded(Coordinate c) {

@@ -17,5 +17,17 @@ public class State {
         matrix = new Matrix(resolution);
     }
 
+    public void fill(Coordinate c) {
+        matrix.fill(c);
+    }
 
+    public String toString() {
+        return "State{energy=" + energy
+                + ", harmonics=" + harmonics
+                + ", resolution=" + matrix.getResolution()
+                + ", filled=" + matrix.numFilled()
+                + ", bots=" + bots.size()
+                + ", trace=" + trace.size()
+                + "}";
+    }
 }
