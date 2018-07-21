@@ -6,6 +6,7 @@ public class SolverFactory {
         switch (name) {
             case "stupid":  return new StupidSolver();
             case "stupidbounding":  return new StupidBoundingSolver();
+            case "optimizing": return new OptimizedSbSolver();
             default: throw new SolverNotFoundException();
         }
 

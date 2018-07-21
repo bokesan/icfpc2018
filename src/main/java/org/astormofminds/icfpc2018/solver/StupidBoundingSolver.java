@@ -157,7 +157,7 @@ public class StupidBoundingSolver implements Solver {
             result.add(Command.DOWN);
         }
         //move back to left
-        if (((ymax - ymin) + (zmax - zmin)) % 2 == 0) {
+        if (((ymax - ymin) % 2 == 0) && ((zmax - zmin) % 2 == 0)) {
             for (int x = xmax; x > 0; x--) {
                 result.add(Command.LEFT);
             }
