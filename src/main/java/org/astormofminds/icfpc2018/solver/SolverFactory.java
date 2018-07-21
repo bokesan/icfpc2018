@@ -14,6 +14,7 @@ public class SolverFactory {
             case "moveto": return new LayerSolver();
             case "twin": return new TwinSolver();
             case "swarm": return new Swarm60Solver();
+            case "surround": return new SurroundSwarmSolver();
             default: throw new SolverNotFoundException();
         }
     }
