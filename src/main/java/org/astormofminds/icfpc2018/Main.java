@@ -50,7 +50,7 @@ public class Main {
                 if (args.length != 4) {
                     usage(1);
                 }
-                solveAll(args[1], args[2], args[3]);
+                solveAll(args[1], args[2], args[3].split(","));
                 break;
             default:
                 usage(1);
@@ -65,16 +65,15 @@ public class Main {
         Binary.writeTrace(traceFile, trace);
     }
 
-    private static void solveAll(String targetFolder, String traceFolder, String solverName) throws IOException {
+    private static void solveAll(String targetFolder, String traceFolder, String[] solverNames) throws IOException {
         File targetDir = new File(targetFolder);
-        File[] targets = targetDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith("_tgt.mdl");
-            }
-        });
+        File[] targets = targetDir.listFiles((dir, name) -> name.endsWith("_tgt.mdl"));
         Arrays.sort(targets);
-        System.out.println("ID;R;default;solver;percent_better");
+        System.out.print("ID;R;default");
+        for (String solver : solverNames) {
+            System.out.print(";" + solver);
+        }
+        System.out.println(";best");
         for (File target : targets) {
             String id = target.getName();
             id = id.substring(0, id.length() - 8);
@@ -88,23 +87,28 @@ public class Main {
                 if (dfltResult == null) {
                     System.out.println(id + ": invalid default trace.");
                 } else {
-                    Solver solver = SolverFactory.byName(solverName);
-                    solver.init(model);
-                    List<Command> trace = solver.getCompleteTrace();
-                    State ownResult = execute(model, trace);
-                    if (ownResult == null) {
-                        System.out.println(id + ": solver generated invalid trace.");
-                    } else {
-                        System.out.format("%s;%d;%d;%d;%.3f%n",
-                                id, model.getResolution(),
-                                dfltResult.getEnergy(),
-                                ownResult.getEnergy(),
-                                100 - 100.0 * ownResult.getEnergy() / dfltResult.getEnergy());
+                    long bestEnergy = dfltResult.getEnergy();
+                    String bestSolver = "default";
+                    System.out.format("%s;%d;%g", id, model.getResolution(), (double) bestEnergy);
+                    for (String solverName : solverNames) {
+                        Solver solver = SolverFactory.byName(solverName);
+                        solver.init(model);
+                        List<Command> trace = solver.getCompleteTrace();
+                        State ownResult = execute(model, trace);
+                        if (ownResult == null) {
+                            System.out.print(";invalid");
+                        } else {
+                            System.out.format(";%g", (double) ownResult.getEnergy());
+                            if (ownResult.getEnergy() < bestEnergy) {
+                                bestEnergy = ownResult.getEnergy();
+                                bestSolver = solverName;
+                            }
+                        }
                     }
+                    System.out.println(";" + bestSolver);
                 }
             }
         }
-
     }
 
     private static void usage(int exitCode) {
