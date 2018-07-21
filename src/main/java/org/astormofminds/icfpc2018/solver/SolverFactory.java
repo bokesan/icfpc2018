@@ -13,6 +13,7 @@ public class SolverFactory {
             case "lhmulti": return new LHMultiFiller();
             case "moveto": return new LayerSolver();
             case "twin": return new TwinSolver();
+            case "swarm": return new Swarm60Solver();
             default: throw new SolverNotFoundException();
         }
     }
