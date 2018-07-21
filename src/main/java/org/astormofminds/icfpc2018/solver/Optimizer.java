@@ -3,6 +3,7 @@ package org.astormofminds.icfpc2018.solver;
 import org.astormofminds.icfpc2018.model.Command;
 import org.astormofminds.icfpc2018.model.Difference;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Optimizer {
@@ -10,30 +11,29 @@ public class Optimizer {
     //this all just works based on the stupid / stupid bounding approach where single steps and layering are used
     //todo: all these methods are probably super inefficient and could be made faster by being smarter
 
-    public static void removeMoves(List<Command> commands) {
-        boolean updated = true;
-        int start = 0;
-        while (updated) {
-            updated = false;
-            int n = commands.size() - 2;
-            for (int i = start; i < n; i++) {
-                //check whether the next command is a move
-                Command.Op next = commands.get(i + 1).getOp();
-                if (next == Command.Op.FILL) continue;
-                Command now = commands.get(i);
-                Command afterNext = commands.get(i + 2);
-                if ((now.equals(Command.UP) && afterNext.equals(Command.DOWN)) ||
-                        (now.equals(Command.DOWN) && afterNext.equals(Command.UP)) ||
-                        (now.equals(Command.LEFT) && afterNext.equals(Command.RIGHT)) ||
-                        (now.equals(Command.RIGHT) && afterNext.equals(Command.LEFT)) ||
-                        (now.equals(Command.FAR) && afterNext.equals(Command.NEAR)) ||
-                        (now.equals(Command.NEAR) && afterNext.equals(Command.FAR))) {
-                    commands.remove(i + 2);
-                    commands.remove(i);
-                    start = Math.max(0, i - 1);
-                    updated = true;
-                    break;
-                }
+    public static void removeMoves(List<Command> cmds) {
+        int end = cmds.size() - 2;
+        int i = 0;
+        while (i < end) {
+            Command now = cmds.get(i);
+            Command next = cmds.get(i + 1);
+            Command afterNext = cmds.get(i + 2);
+            if (now.getOp() == Command.Op.SMOVE &&
+                afterNext.getOp() == Command.Op.SMOVE &&
+                (now.equals(Command.UP) && afterNext.equals(Command.DOWN) ||
+                    now.equals(Command.DOWN) && afterNext.equals(Command.UP) ||
+                    now.equals(Command.LEFT) && afterNext.equals(Command.RIGHT) ||
+                    now.equals(Command.RIGHT) && afterNext.equals(Command.LEFT) ||
+                    now.equals(Command.FAR) && afterNext.equals(Command.NEAR) ||
+                    now.equals(Command.NEAR) && afterNext.equals(Command.FAR))
+                && next.getOp() != Command.Op.FILL)
+            {
+                cmds.remove(i+2);
+                cmds.remove(i);
+                i = Math.max(i - 1, 0);
+                end -= 2;
+            } else {
+                i++;
             }
         }
     }
