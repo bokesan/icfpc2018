@@ -89,7 +89,7 @@ public class Main {
                 } else {
                     long bestEnergy = dfltResult.getEnergy();
                     String bestSolver = "default";
-                    System.out.format("%s;%d;%g", id, model.getResolution(), (double) bestEnergy);
+                    System.out.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                     for (String solverName : solverNames) {
                         Solver solver = SolverFactory.byName(solverName);
                         solver.init(model);
@@ -98,7 +98,7 @@ public class Main {
                         if (ownResult == null) {
                             System.out.print(";invalid");
                         } else {
-                            System.out.format(";%g", (double) ownResult.getEnergy());
+                            System.out.format(";%d", ownResult.getEnergy());
                             if (ownResult.getEnergy() < bestEnergy) {
                                 bestEnergy = ownResult.getEnergy();
                                 bestSolver = solverName;
