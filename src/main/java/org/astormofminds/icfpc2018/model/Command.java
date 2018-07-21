@@ -177,12 +177,13 @@ public class Command {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Command command = (Command) o;
+        Command other = (Command) o;
 
-        if (m != command.m) return false;
-        if (op != command.op) return false;
-        if (d1 != null ? !d1.equals(command.d1) : command.d1 != null) return false;
-        return d2 != null ? d2.equals(command.d2) : command.d2 == null;
+        if (op != other.op) return false;
+        if (d1 != null && !d1.equals(other.d1)) return false;
+        if (m != other.m) return false;
+        if (d2 != null && !d2.equals(other.d2)) return false;
+        return true;
     }
 
     @Override

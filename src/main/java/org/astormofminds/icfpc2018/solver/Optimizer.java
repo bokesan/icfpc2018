@@ -30,7 +30,7 @@ public class Optimizer {
                         (now.equals(Command.NEAR) && afterNext.equals(Command.FAR))) {
                     commands.remove(i + 2);
                     commands.remove(i);
-                    start = Math.max(0, i - 2);
+                    start = Math.max(0, i - 1);
                     updated = true;
                     break;
                 }
@@ -40,11 +40,12 @@ public class Optimizer {
 
     public static void combineStraightMoves(List<Command> commands) {
         boolean updated = true;
+        int start = 0;
         while (updated) {
             updated = false;
             Command current = null;
             int streak = 1;
-            for (int i = 0; i < commands.size(); i++) {
+            for (int i = start; i < commands.size(); i++) {
                 if (commands.get(i).equals(current)) {
                     streak++;
                     if (streak == 15) {
@@ -70,6 +71,7 @@ public class Optimizer {
                             commands.remove(i - streak + 1);
                         }
                         commands.add(i - streak + 1, newCommand);
+                        start = Math.max(i - streak + 1, 0);
                         updated = true;
                         break;
                     }
@@ -97,6 +99,7 @@ public class Optimizer {
                             commands.remove(i - streak);
                         }
                         commands.add(i - streak, newCommand);
+                        start = Math.max(i - streak, 0);
                         updated = true;
                         break;
                     }
