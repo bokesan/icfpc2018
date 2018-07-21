@@ -74,4 +74,9 @@ public class Nanobot implements Comparable<Nanobot> {
     public int compareTo(Nanobot o) {
         return Integer.compare(bid, o.bid);
     }
+
+    @Override
+    public String toString() {
+        return "bot " + bid + " " + pos;
+    }
 }

@@ -15,6 +15,9 @@ public class Coordinate {
     }
 
     public static Coordinate of(int x, int y, int z) {
+        if (x < 0 || y < 0 || z < 0) {
+            throw new IllegalArgumentException("invalid coordinate (" + x + ", " + y + ", " + z + ")");
+        }
         return new Coordinate(x, y, z);
     }
 

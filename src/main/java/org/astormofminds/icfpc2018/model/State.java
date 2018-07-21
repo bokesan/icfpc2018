@@ -135,7 +135,7 @@ public class State {
                 case FUSIONP:
                 case FUSIONS:
                     if (group.size() != 2) {
-                        throw new ExecutionException("invalid fusion group size: " + group.size());
+                        throw new ExecutionException("invalid fusion group size (bots=" + bots.size() + "): " + group.size());
                     }
                     BotCommand bcs;
                     if (cmd.getOp() == Command.Op.FUSIONP) {
@@ -162,6 +162,10 @@ public class State {
         BotCommand(Nanobot bot, Command command) {
             this.bot = bot;
             this.command = command;
+        }
+
+        public String toString() {
+            return bot + ": " + command;
         }
     }
 
