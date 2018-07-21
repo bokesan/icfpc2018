@@ -4,9 +4,9 @@ public class Coordinate {
 
     public static final Coordinate ORIGIN = new Coordinate(0, 0, 0);
 
-    public final int x;
-    public final int y;
-    public final int z;
+    private final int x;
+    private final int y;
+    private final int z;
 
     private Coordinate(int x, int y, int z) {
         this.x = x;
@@ -19,11 +19,11 @@ public class Coordinate {
     }
 
     public Coordinate plus(Difference d) {
-        return of(x + d.dx, y + d.dy, z + d.dz);
+        return of(x + d.getDx(), y + d.getDy(), z + d.getDz());
     }
 
     public Coordinate minus(Difference d) {
-        return of(x - d.dx, y - d.dy, z - d.dz);
+        return of(x - d.getDx(), y - d.getDy(), z - d.getDz());
     }
 
     /**
@@ -101,5 +101,17 @@ public class Coordinate {
         result = 31 * result + y;
         result = 31 * result + z;
         return result;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getZ() {
+        return z;
     }
 }

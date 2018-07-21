@@ -18,9 +18,9 @@ public class Matrix {
     }
 
     private void check(Coordinate c) {
-        if (c.x < 0 || c.x >= resolution
-            || c.y < 0 || c.y >= resolution
-            || c.z < 0 || c.z >= resolution)
+        if (c.getX() < 0 || c.getX() >= resolution
+            || c.getY() < 0 || c.getY() >= resolution
+            || c.getZ() < 0 || c.getZ() >= resolution)
             throw new IllegalArgumentException("coordinate out of bounds (r=" + resolution + "): " + c);
     }
 
@@ -38,7 +38,7 @@ public class Matrix {
 
     private int index(Coordinate c) {
         check(c);
-        return index(c.x, c.y, c.z);
+        return index(c.getX(), c.getY(), c.getZ());
     }
 
     private boolean isFull(int x, int y, int z) {
@@ -73,9 +73,9 @@ public class Matrix {
     }
 
     public boolean isValid(Coordinate c) {
-        return c.x >= 0 && c.x < resolution
-                && c.y >= 0 && c.y < resolution
-                && c.z >= 0 && c.z < resolution;
+        return c.getX() >= 0 && c.getX() < resolution
+                && c.getY() >= 0 && c.getY() < resolution
+                && c.getZ() >= 0 && c.getZ() < resolution;
     }
 
     public boolean isGrounded(Coordinate c) {
@@ -87,7 +87,7 @@ public class Matrix {
         stack.push(c);
         while (!stack.empty()) {
             Coordinate c1 = stack.pop();
-            if (c1.y == 0) {
+            if (c1.getY() == 0) {
                 return true;
             }
             if (visited.add(c1)) {

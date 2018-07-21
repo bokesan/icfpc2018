@@ -169,7 +169,7 @@ public class Command {
     }
 
     private int encodeNd(Difference nd) {
-        return 9 * (nd.dx + 1) + 3 * (nd.dy + 1) + (nd.dz + 1);
+        return 9 * (nd.getDx() + 1) + 3 * (nd.getDy() + 1) + (nd.getDz() + 1);
     }
 
     @Override

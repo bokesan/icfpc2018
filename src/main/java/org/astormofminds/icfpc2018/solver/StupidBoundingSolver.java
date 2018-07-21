@@ -26,12 +26,12 @@ public class StupidBoundingSolver implements Solver {
         }
 
         Region box = matrix.getBoundingBox();
-        int xmin = Math.min(box.c1.x, box.c2.x);
-        int ymin = Math.min(box.c1.y, box.c2.y);
-        int zmin = Math.min(box.c1.z, box.c2.z);
-        int xmax = Math.max(box.c1.x, box.c2.x);
-        int ymax = Math.max(box.c1.y, box.c2.y);
-        int zmax = Math.max(box.c1.z, box.c2.z);
+        int xmin = Math.min(box.getC1().getX(), box.getC2().getX());
+        int ymin = Math.min(box.getC1().getY(), box.getC2().getY());
+        int zmin = Math.min(box.getC1().getZ(), box.getC2().getZ());
+        int xmax = Math.max(box.getC1().getX(), box.getC2().getX());
+        int ymax = Math.max(box.getC1().getY(), box.getC2().getY());
+        int zmax = Math.max(box.getC1().getZ(), box.getC2().getZ());
 
 
 

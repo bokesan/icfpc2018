@@ -5,9 +5,9 @@ package org.astormofminds.icfpc2018.model;
  */
 public class Difference {
 
-    public final int dx;
-    public final int dy;
-    public final int dz;
+    private final int dx;
+    private final int dy;
+    private final int dz;
 
     private Difference(int dx, int dy, int dz) {
         this.dx = dx;
@@ -20,7 +20,7 @@ public class Difference {
     }
 
     public static Difference between(Coordinate c, Coordinate c1) {
-        return of(c.x - c1.x, c.y - c1.y, c.z - c1.z);
+        return of(c.getX() - c1.getX(), c.getY() - c1.getY(), c.getZ() - c1.getZ());
     }
 
     /**
@@ -98,5 +98,17 @@ public class Difference {
         result = 31 * result + dy;
         result = 31 * result + dz;
         return result;
+    }
+
+    public int getDx() {
+        return dx;
+    }
+
+    public int getDy() {
+        return dy;
+    }
+
+    public int getDz() {
+        return dz;
     }
 }
