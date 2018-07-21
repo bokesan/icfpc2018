@@ -12,9 +12,11 @@ public class Optimizer {
 
     public static void removeMoves(List<Command> commands) {
         boolean updated = true;
+        int start = 0;
         while (updated) {
             updated = false;
-            for (int i = 0; i < commands.size() - 2; i++) {
+            int n = commands.size() - 2;
+            for (int i = start; i < n; i++) {
                 //check whether the next command is a move
                 Command.Op next = commands.get(i + 1).getOp();
                 if (next == Command.Op.FILL) continue;
@@ -28,6 +30,7 @@ public class Optimizer {
                         (now.equals(Command.NEAR) && afterNext.equals(Command.FAR))) {
                     commands.remove(i + 2);
                     commands.remove(i);
+                    start = Math.max(0, i - 2);
                     updated = true;
                     break;
                 }
