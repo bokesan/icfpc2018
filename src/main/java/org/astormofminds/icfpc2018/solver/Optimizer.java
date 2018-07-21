@@ -12,28 +12,28 @@ public class Optimizer {
     //todo: all these methods are probably super inefficient and could be made faster by being smarter
 
     public static void removeMoves(List<Command> cmds) {
-        int end = cmds.size() - 2;
-        int i = 0;
-        while (i < end) {
+        int end = cmds.size();
+        int i = end - 3;
+        while (i >= 0) {
             Command now = cmds.get(i);
             Command next = cmds.get(i + 1);
             Command afterNext = cmds.get(i + 2);
             if (now.getOp() == Command.Op.SMOVE &&
-                afterNext.getOp() == Command.Op.SMOVE &&
-                (now.equals(Command.UP) && afterNext.equals(Command.DOWN) ||
-                    now.equals(Command.DOWN) && afterNext.equals(Command.UP) ||
-                    now.equals(Command.LEFT) && afterNext.equals(Command.RIGHT) ||
-                    now.equals(Command.RIGHT) && afterNext.equals(Command.LEFT) ||
-                    now.equals(Command.FAR) && afterNext.equals(Command.NEAR) ||
-                    now.equals(Command.NEAR) && afterNext.equals(Command.FAR))
-                && next.getOp() != Command.Op.FILL)
+                    afterNext.getOp() == Command.Op.SMOVE &&
+                    (now.equals(Command.UP) && afterNext.equals(Command.DOWN) ||
+                            now.equals(Command.DOWN) && afterNext.equals(Command.UP) ||
+                            now.equals(Command.LEFT) && afterNext.equals(Command.RIGHT) ||
+                            now.equals(Command.RIGHT) && afterNext.equals(Command.LEFT) ||
+                            now.equals(Command.FAR) && afterNext.equals(Command.NEAR) ||
+                            now.equals(Command.NEAR) && afterNext.equals(Command.FAR))
+                    && next.getOp() != Command.Op.FILL)
             {
                 cmds.remove(i+2);
                 cmds.remove(i);
-                i = Math.max(i - 1, 0);
                 end -= 2;
+                i = Math.min(i, end - 3);
             } else {
-                i++;
+                i--;
             }
         }
     }
