@@ -150,9 +150,9 @@ public class Matrix {
     public Region getBoundingBox() {
         int xmin = resolution, ymin = resolution, zmin = resolution;
         int xmax = 0, ymax = 0, zmax = 0;
-        for (int x = 1; x < resolution - 1; x++) {
+        for (int x = 0; x < resolution; x++) {
             for (int y = 0; y < resolution - 1; y++) {
-                for (int z = 1; z < resolution - 1; z++) {
+                for (int z = 0; z < resolution; z++) {
                     if (isFull(x, y, z)) {
                         xmin = Math.min(xmin, x);
                         ymin = Math.min(ymin, y);
@@ -190,4 +190,21 @@ public class Matrix {
         return "Matrix{r=" + getResolution() + ", filled=" + numFilled() + "}";
     }
 
+    public Matrix getHalf(int minX, int maxX) {
+        Matrix matrix = new Matrix(resolution);
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = 0; y < resolution; y++) {
+                for (int z = 0; z < resolution; z++) {
+                    if (isFull(x, y, z)) matrix.fill(Coordinate.of(x - minX, y, z));
+                }
+            }
+        }
+        return matrix;
+    }
+
+    public boolean contains(Coordinate c) {
+        return !(c.getX() < 0 || c.getX() >= resolution
+                || c.getY() < 0 || c.getY() >= resolution
+                || c.getZ() < 0 || c.getZ() >= resolution);
+    }
 }

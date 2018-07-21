@@ -111,9 +111,13 @@ public class Command {
         return m;
     }
 
+    /**
+     * Return the position of the fusion primary.
+     */
     public Coordinate getFusionPosition(Coordinate c) {
         switch (op) {
             case FUSIONP:
+                return c;
             case FUSIONS:
                 return c.plus(d1);
             default:
