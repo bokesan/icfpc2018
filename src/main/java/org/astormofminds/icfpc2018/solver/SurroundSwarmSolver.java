@@ -69,9 +69,9 @@ public class SurroundSwarmSolver implements Solver {
         floating = new HashSet<>();
 
         //spawn bots
-        int numBotsToSpawn = (xmax - xmin) / 3;
+        int numBotsToSpawn = (xmax - xmin + 1) / 3;
         //if we cover it perfectly, we subtract on for the existing bot
-        if ((xmax - xmin) % 3 == 0) numBotsToSpawn--;
+        if ((xmax - xmin + 1) % 3 == 0) numBotsToSpawn--;
         if (numBotsToSpawn > 19) {
             result.add(Command.HALT);
             return result;
@@ -119,7 +119,7 @@ public class SurroundSwarmSolver implements Solver {
                     }
                 }
                 // move 3 up, unless it is the last run through
-                if (y < ymax + 3) {
+                if (y < ymax - 1) {
                     moveUp(numBots, 3);
                 }
             }
