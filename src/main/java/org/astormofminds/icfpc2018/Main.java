@@ -66,6 +66,7 @@ public class Main {
     }
 
     private static void solveAll(String targetFolder, String traceFolder, String[] solverNames) throws IOException {
+        long startTime = System.nanoTime();
         File targetDir = new File(targetFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.endsWith("_tgt.mdl"));
         Arrays.sort(targets);
@@ -77,6 +78,7 @@ public class Main {
         for (File target : targets) {
             String id = target.getName();
             id = id.substring(0, id.length() - 8);
+            if (id.equals("LA051")) break;
             String traceFile = traceFolder + "/" + id + ".nbt";
             try (InputStream in = new BufferedInputStream(new FileInputStream(target));
                  InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
@@ -109,6 +111,8 @@ public class Main {
                 }
             }
         }
+        long elapsedTime = System.nanoTime() - startTime;
+        System.out.format("Elapsed time: %.3f seconds.%n", elapsedTime / 1.0e9);
     }
 
     private static void usage(int exitCode) {
