@@ -83,7 +83,7 @@ public class Swarm60Solver implements Solver {
                 addWait();
             }
             //spawn a new one
-            result.add(Command.fission(Difference.of(1, 0, 0), numBotsToSpawn + 1 - i));
+            result.add(Command.fission(Difference.of(1, 0, 0), 19 - i));
 
             //let the left ones wait while the new one moves right
             for (int j = 0; j < i; j++) {
