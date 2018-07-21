@@ -77,7 +77,6 @@ public class Main {
         }
         System.out.println(";best");
         targetFiles.parallelStream()
-                .filter(t -> t.getName().compareTo("LA151") < 0)
                 .map(t -> {
                     try {
                         return solveProblem(traceFolder, solverNames, t);
