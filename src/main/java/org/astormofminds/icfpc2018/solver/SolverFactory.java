@@ -10,6 +10,7 @@ public class SolverFactory {
             case "stupidbounding":  return new StupidBoundingSolver();
             case "optimizing": return new OptimizedSbSolver();
             case "lowharm": return new LowHarmonicSolver();
+            case "lhmulti": return new LHMultiFiller();
             case "moveto": return new LayerSolver();
             default: throw new SolverNotFoundException();
         }
