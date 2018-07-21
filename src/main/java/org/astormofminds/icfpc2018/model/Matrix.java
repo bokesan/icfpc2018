@@ -95,9 +95,9 @@ public class Matrix {
 
     public boolean isGrounded(Coordinate c) {
         BitSet visited = new BitSet(resolution * resolution * (resolution-1));
-        Stack<Coordinate> stack = new Stack<>();
+        Deque<Coordinate> stack = new ArrayDeque<>(50);
         stack.push(c);
-        while (!stack.empty()) {
+        while (!stack.isEmpty()) {
             Coordinate c1 = stack.pop();
             if (c1.getY() == 0) {
                 return true;
@@ -116,7 +116,7 @@ public class Matrix {
         return false;
     }
 
-    private void tryNeighbor(Stack<Coordinate> stack, Coordinate voxel) {
+    private void tryNeighbor(Deque<Coordinate> stack, Coordinate voxel) {
         if (isValid(voxel) && isFull(voxel)) {
             stack.push(voxel);
         }
