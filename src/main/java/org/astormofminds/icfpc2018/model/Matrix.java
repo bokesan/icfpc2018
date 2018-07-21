@@ -91,12 +91,12 @@ public class Matrix {
                 return true;
             }
             if (visited.add(c1)) {
-                tryNeighbor(stack, c1.below());
+                tryNeighbor(stack, c1.above());
                 tryNeighbor(stack, c1.left());
                 tryNeighbor(stack, c1.before());
                 tryNeighbor(stack, c1.right());
                 tryNeighbor(stack, c1.behind());
-                tryNeighbor(stack, c1.above());
+                tryNeighbor(stack, c1.below());
             }
         }
         return false;
