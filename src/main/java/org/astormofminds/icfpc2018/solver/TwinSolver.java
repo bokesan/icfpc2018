@@ -100,7 +100,12 @@ public class TwinSolver implements Solver {
         //move second bot back
         x = midX;
         while(x > 1) {
-            result.add(Command.WAIT);
+            if (combinedHigh) {
+                combinedHigh = false;
+                result.add(Command.FLIP);
+            } else {
+                result.add(Command.WAIT);
+            }
             int distance = Math.min(15, x - 1);
             result.add(Command.sMove(Difference.of(-distance, 0, 0)));
             x -= distance;
