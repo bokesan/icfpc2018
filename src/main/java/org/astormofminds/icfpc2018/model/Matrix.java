@@ -68,6 +68,21 @@ public class Matrix {
         }
     }
 
+    /**
+     * Set the voxel at c to VOID.
+     * @return {@code true} if the old state of the voxel was FULL,
+     * {@code false} if it was already VOID.
+     */
+    public boolean unfill(Coordinate c) {
+        int i = index(c);
+        if (!voxels.get(i)) {
+            return false;
+        } else {
+            voxels.clear(i);
+            return true;
+        }
+    }
+
     public int numFilled() {
         return voxels.cardinality();
     }

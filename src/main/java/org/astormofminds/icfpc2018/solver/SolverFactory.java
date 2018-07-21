@@ -7,9 +7,9 @@ public class SolverFactory {
             case "stupid":  return new StupidSolver();
             case "stupidbounding":  return new StupidBoundingSolver();
             case "optimizing": return new OptimizedSbSolver();
+            case "lowharm": return new LowHarmonicSolver();
+            case "lhmulti": return new LHMultiFiller();
             default: throw new SolverNotFoundException();
         }
-
-
     }
 }
