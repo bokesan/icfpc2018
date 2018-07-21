@@ -210,7 +210,7 @@ public class State {
 
     public boolean isWellFormed() {
         if (harmonics == HarmonicsState.LOW) {
-            if (!matrix.filled().allMatch(matrix::isGrounded)) {
+            if (!matrix.allGrounded()) {
                 logger.info("not all grounded");
                 return false;
             }

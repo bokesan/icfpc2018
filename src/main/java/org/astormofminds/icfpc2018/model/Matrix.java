@@ -7,10 +7,12 @@ public class Matrix {
 
     private final int resolution;
     private final BitSet voxels;
+    private final BitSet grounded;
 
     public Matrix(int resolution) {
         this.resolution = resolution;
         this.voxels = new BitSet(resolution * resolution * resolution);
+        this.grounded = new BitSet();
     }
 
     public int getResolution() {
@@ -64,6 +66,7 @@ public class Matrix {
             return false;
         } else {
             voxels.set(i);
+            postFill(c);
             return true;
         }
     }
@@ -79,12 +82,74 @@ public class Matrix {
             return false;
         } else {
             voxels.clear(i);
+            postClear(c);
             return true;
         }
     }
 
+    /**
+     * After filling a voxel, we have to check if it immediately becomes grounded.
+     * That is the case if and only if y == or or a neigboring voxel is grounded.
+     *
+     * If it does become grounded, we then have to recursively ground any neighboring
+     * ungrounded voxels.
+     */
+    private void postFill(Coordinate c) {
+        boolean g = (c.getY() == 0
+                     || isGrounded(c.below())
+                     || isGrounded(c.above())
+                     || isGrounded(c.left())
+                     || isGrounded(c.right())
+                     || isGrounded(c.before())
+                     || isGrounded(c.behind()));
+        if (g) {
+            grounded.set(index(c));
+            ground(c.below());
+            ground(c.above());
+            ground(c.before());
+            ground(c.behind());
+            ground(c.left());
+            ground(c.right());
+        }
+    }
+
+    private void ground(Coordinate c) {
+        if (isValid(c) && isFull(c) && !isGrounded(c)) {
+            grounded.set(index(c));
+            ground(c.below());
+            ground(c.above());
+            ground(c.before());
+            ground(c.behind());
+            ground(c.left());
+            ground(c.right());
+        }
+    }
+
+    /**
+     * After clearing a grounded voxel, we must check if neighboring voxel become ungrounded, too.
+     * I'm too tired to do this efficiently.
+     */
+    private void postClear(Coordinate c) {
+        grounded.clear();
+        for (int x = 0; x < resolution; x++) {
+            for (int z = 0; z < resolution; z++) {
+                Coordinate c0 = Coordinate.of(x, 0, z);
+                ground(c0);
+            }
+        }
+    }
+
+
+    public boolean isGrounded(Coordinate c) {
+        return isValid(c) && grounded.get(index(c));
+    }
+
     public int numFilled() {
         return voxels.cardinality();
+    }
+
+    public boolean allGrounded() {
+        return grounded.cardinality() == voxels.cardinality();
     }
 
     public boolean isValid(Coordinate c) {
@@ -93,55 +158,11 @@ public class Matrix {
                 && c.getZ() >= 0 && c.getZ() < resolution;
     }
 
-    public boolean isGrounded(Coordinate c) {
-        BitSet visited = new BitSet(resolution * resolution * (resolution-1));
-        Deque<Coordinate> stack = new ArrayDeque<>(50);
-        stack.push(c);
-        while (!stack.isEmpty()) {
-            Coordinate c1 = stack.pop();
-            if (c1.getY() == 0) {
-                return true;
-            }
-            int i = index(c1);
-            if (!visited.get(i)) {
-                visited.set(i);
-                tryNeighbor(stack, c1.above());
-                tryNeighbor(stack, c1.left());
-                tryNeighbor(stack, c1.before());
-                tryNeighbor(stack, c1.right());
-                tryNeighbor(stack, c1.behind());
-                tryNeighbor(stack, c1.below());
-            }
-        }
-        return false;
-    }
-
-    private void tryNeighbor(Deque<Coordinate> stack, Coordinate voxel) {
-        if (isValid(voxel) && isFull(voxel)) {
-            stack.push(voxel);
-        }
-    }
-
     /**
      * Get all full voxel coordinates.
      */
     public Stream<Coordinate> filled() {
         return voxels.stream().mapToObj(this::toCoordinate);
-    }
-
-    /**
-     * Get full voxels on given y-plane.
-     */
-    public Stream<Coordinate> filled(int y) {
-        Stream.Builder<Coordinate> builder = Stream.builder();
-        for (int x = 1; x < resolution - 1; x++) {
-            for (int z = 1; z < resolution - 1; z++) {
-                if (isFull(x, 0, z)) {
-                    builder.accept(Coordinate.of(x, 0, z));
-                }
-            }
-        }
-        return builder.build();
     }
 
     /**
