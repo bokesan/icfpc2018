@@ -74,7 +74,7 @@ public class Main {
             }
         });
         Arrays.sort(targets);
-        System.out.println("ID;default;solver;percent");
+        System.out.println("ID;R;default;solver;percent_better");
         for (File target : targets) {
             String id = target.getName();
             id = id.substring(0, id.length() - 8);
@@ -95,11 +95,11 @@ public class Main {
                     if (ownResult == null) {
                         System.out.println(id + ": solver generated invalid trace.");
                     } else {
-                        System.out.format("%s;%d;%d;%.1f%n",
-                                id,
+                        System.out.format("%s;%d;%d;%d;%.3f%n",
+                                id, model.getResolution(),
                                 dfltResult.getEnergy(),
                                 ownResult.getEnergy(),
-                                100.0 * ownResult.getEnergy() / dfltResult.getEnergy());
+                                100 - 100.0 * ownResult.getEnergy() / dfltResult.getEnergy());
                     }
                 }
             }
