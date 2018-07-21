@@ -51,15 +51,21 @@ public class SurroundSwarmSolver implements Solver {
         }
 
         //move to starting point and one further right - we cover more ground
-        for (int x = 0; x <= xmin; x++) {
-            moveRight();
+        while (posx < xmin - 1) {
+            int steps = Math.min(xmin - 1 - posx, 15);
+            result.add(Command.sMove(Difference.of(steps, 0, 0)));
+            posx += steps;
         }
         //move one higher up, because we build from over the voxel
-        for (int y = 0; y < ymin + 1; y++) {
-            moveUp(1);
+        while (posy <= ymin) {
+            int steps = Math.min(ymin + 1 - posy, 15);
+            result.add(Command.sMove(Difference.of(0, steps, 0)));
+            posy += steps;
         }
-        for (int z = 0; z < zmin - 1; z++) {
-            moveFar(1);
+        while (posz < zmin - 1) {
+            int steps = Math.min(zmin - 1 - posz, 15);
+            result.add(Command.sMove(Difference.of(0, 0, steps)));
+            posz += steps;
         }
 
         currentMatrix = new Matrix(targetMatrix.getResolution());
@@ -106,7 +112,7 @@ public class SurroundSwarmSolver implements Solver {
                     }
                 }
                 // move one up, unless it is the last run through
-                if (y < ymax + 3) {
+                if (y < ymax - 1) {
                     moveUp(numBots, 3);
                 }
             } else {
@@ -121,6 +127,14 @@ public class SurroundSwarmSolver implements Solver {
                 // move 3 up, unless it is the last run through
                 if (y < ymax - 1) {
                     moveUp(numBots, 3);
+                }
+            }
+            if (switchOff) {
+                switchOff = false;
+                harmonicHigh = false;
+                result.add(Command.FLIP);
+                for (int i = 1; i < numBots; i++) {
+                    result.add(Command.WAIT);
                 }
             }
         }
@@ -144,9 +158,21 @@ public class SurroundSwarmSolver implements Solver {
         }
 
         //return home
-        while (posz > 0) moveNear(1);
-        while (posy > 0) moveDown(1);
-        while (posx > 0) moveLeft();
+        while (posz > 0) {
+            int steps = Math.min(15, posz);
+            result.add(Command.sMove(Difference.of(0, 0, -steps)));
+            posz -= steps;
+        };
+        while (posy > 0) {
+            int steps = Math.min(15, posy);
+            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            posy -= steps;
+        }
+        while (posx > 0) {
+            int steps = Math.min(15, posx);
+            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
+            posx -= steps;
+        }
         //end finally, stop
         result.add(Command.HALT);
 
@@ -270,25 +296,9 @@ public class SurroundSwarmSolver implements Solver {
         }
     }
 
-    //todo: combine single steps
-
-    private void moveDown(int numbots) {
-        for (int i = 0; i < numbots; i++) {
-            result.add(Command.DOWN);
-        }
-        posy--;
-    }
-
-    private void moveUp(int numbots) {
-        for (int i = 0; i < numbots; i++) {
-            result.add(Command.UP);
-        }
-        posy++;
-    }
-
     private void moveUp(int numbots, int steps) {
-        for (int i = 0; i < numbots * steps; i++) {
-            result.add(Command.UP);
+        for (int i = 0; i < numbots; i++) {
+            result.add(Command.sMove(Difference.of(0, steps, 0)));
         }
         posy+=steps;
     }
@@ -305,15 +315,5 @@ public class SurroundSwarmSolver implements Solver {
             result.add(Command.NEAR);
         }
         posz--;
-    }
-
-    private void moveRight() {
-        result.add(Command.RIGHT);
-        posx++;
-    }
-
-    private void moveLeft() {
-        result.add(Command.LEFT);
-        posx--;
     }
 }
