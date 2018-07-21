@@ -64,9 +64,7 @@ public class State {
         }
         Stream.Builder<BotCommand> botCommands = Stream.builder();
         for (Nanobot bot : bots) {
-            BotCommand bc = new BotCommand();
-            bc.bot = bot;
-            bc.command = trace.removeFirst();
+            BotCommand bc = new BotCommand(bot, trace.removeFirst());
             botCommands.add(bc);
         }
         Collection<List<BotCommand>> groups = botCommands.build()
@@ -154,8 +152,13 @@ public class State {
     }
 
     private static class BotCommand {
-        Nanobot bot;
-        Command command;
+        final Nanobot bot;
+        final Command command;
+
+        BotCommand(Nanobot bot, Command command) {
+            this.bot = bot;
+            this.command = command;
+        }
     }
 
     private static class GroupKey {
@@ -206,6 +209,11 @@ public class State {
         if (bots.stream().anyMatch(b -> matrix.isFull(b.getPos()))) {
             return false;
         }
+        if (bots.stream().anyMatch(b -> bots.stream().anyMatch(b1 -> b.getPos().equals(b1.getPos()) && !b.equals(b1)))) {
+            // bot positions not disjunct
+            return false;
+        }
+
         // TODO: more conditions
         return true;
     }
