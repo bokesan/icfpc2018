@@ -101,7 +101,7 @@ public class TwinSolver implements Solver {
         x = midX;
         while(x > 1) {
             result.add(Command.WAIT);
-            int distance = Math.min(15, midX - 1);
+            int distance = Math.min(15, x - 1);
             result.add(Command.sMove(Difference.of(-distance, 0, 0)));
             x -= distance;
         }
