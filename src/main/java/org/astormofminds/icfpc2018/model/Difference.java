@@ -19,8 +19,24 @@ public class Difference {
         return new Difference(dx, dy, dz);
     }
 
-    public static Difference between(Coordinate c, Coordinate c1) {
+    public static Difference ofX(int dx) {
+        return of(dx, 0, 0);
+    }
+
+    public static Difference ofY(int dy) {
+        return of(0, dy, 0);
+    }
+
+    public static Difference ofZ(int dz) {
+        return of(0, 0, dz);
+    }
+
+    public static Difference between(Coordinate c1, Coordinate c) {
         return of(c.getX() - c1.getX(), c.getY() - c1.getY(), c.getZ() - c1.getZ());
+    }
+
+    public boolean isZero() {
+        return dx == 0 && dy == 0 && dz == 0;
     }
 
     /**

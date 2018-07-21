@@ -207,14 +207,17 @@ public class State {
     public boolean isWellFormed() {
         if (harmonics == HarmonicsState.LOW) {
             if (!matrix.filled().allMatch(matrix::isGrounded)) {
+                logger.info("not all grounded");
                 return false;
             }
         }
         if (bots.stream().anyMatch(b -> matrix.isFull(b.getPos()))) {
+            logger.info("bit at full");
             return false;
         }
         if (bots.stream().anyMatch(b -> bots.stream().anyMatch(b1 -> b.getPos().equals(b1.getPos()) && !b.equals(b1)))) {
             // bot positions not disjunct
+            logger.info("bot positions not disjunct");
             return false;
         }
 
