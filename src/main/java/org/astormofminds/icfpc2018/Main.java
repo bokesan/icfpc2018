@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -72,6 +73,7 @@ public class Main {
                 return name.endsWith("_tgt.mdl");
             }
         });
+        Arrays.sort(targets);
         System.out.println("ID;default;solver;percent");
         for (File target : targets) {
             String id = target.getName();
