@@ -94,10 +94,7 @@ public class Matrix {
     }
 
     public boolean isGrounded(Coordinate c) {
-        if (get(c) != VoxelState.FULL) {
-            throw new IllegalArgumentException("VOID voxel: " + c);
-        }
-        Set<Coordinate> visited = new HashSet<>();
+        BitSet visited = new BitSet(resolution * resolution * (resolution-1));
         Stack<Coordinate> stack = new Stack<>();
         stack.push(c);
         while (!stack.empty()) {
@@ -105,7 +102,9 @@ public class Matrix {
             if (c1.getY() == 0) {
                 return true;
             }
-            if (visited.add(c1)) {
+            int i = index(c1);
+            if (!visited.get(i)) {
+                visited.set(i);
                 tryNeighbor(stack, c1.above());
                 tryNeighbor(stack, c1.left());
                 tryNeighbor(stack, c1.before());

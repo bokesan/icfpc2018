@@ -32,16 +32,45 @@ public class LayerSolver implements Solver {
         int top = box.getC2().getY();
         int back = box.getC2().getZ();
         int right = box.getC2().getX();
+        int left = box.getC1().getX();
         for (int y = 0; y <= top; y++) {
-            for (int z = box.getC1().getZ(); z <= back; z++) {
+            for (int z = box.getC1().getZ(); z <= back; ) {
                 for (int x = box.getC1().getX(); x <= right; x++) {
                     Coordinate c = Coordinate.of(x, y, z);
-                    if (target.isFull(c)) {
+                    if (target.isFull(c) && !state.isFull(c)) {
                         moveTo(c.above());
-                        if (harmonics == HarmonicsState.LOW && !state.isGrounded(c)) {
-                            emit(Command.FLIP);
+                        if (harmonics == HarmonicsState.LOW) {
+                            if (!state.isGrounded(c)) {
+                                emit(Command.FLIP);
+                            }
                         }
                         emit(Command.fill(Difference.ofY(-1)));
+                        if (harmonics == HarmonicsState.HIGH) {
+                            if (state.filled().allMatch(state::isGrounded)) {
+                                emit(Command.FLIP);
+                            }
+                        }
+                    }
+                }
+                z++;
+                if (z > back) {
+                    break;
+                }
+                for (int x = right; x >= left; x--) {
+                    Coordinate c = Coordinate.of(x, y, z);
+                    if (target.isFull(c) && !state.isFull(c)) {
+                        moveTo(c.above());
+                        if (harmonics == HarmonicsState.LOW) {
+                            if (!state.isGrounded(c)) {
+                                emit(Command.FLIP);
+                            }
+                        }
+                        emit(Command.fill(Difference.ofY(-1)));
+                        if (harmonics == HarmonicsState.HIGH) {
+                            if (state.filled().allMatch(state::isGrounded)) {
+                                emit(Command.FLIP);
+                            }
+                        }
                     }
                 }
             }
