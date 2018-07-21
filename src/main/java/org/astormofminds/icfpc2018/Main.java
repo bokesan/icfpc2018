@@ -105,6 +105,7 @@ public class Main {
             } else {
                 long bestEnergy = dfltResult.getEnergy();
                 String bestSolver = "default";
+                List<Command> bestTrace = null;
                 String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                 for (String solverName : solverNames) {
                     Solver solver = SolverFactory.byName(solverName);
@@ -118,8 +119,12 @@ public class Main {
                         if (ownResult.getEnergy() < bestEnergy) {
                             bestEnergy = ownResult.getEnergy();
                             bestSolver = solverName;
+                            bestTrace = trace;
                         }
                     }
+                }
+                if (bestTrace != null) {
+                    Binary.writeTrace(id + ".nbt", bestTrace);
                 }
                 r += ";" + bestSolver;
                 return r;
