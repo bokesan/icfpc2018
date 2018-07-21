@@ -70,49 +70,61 @@ public class Main {
         File targetDir = new File(targetFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.endsWith("_tgt.mdl"));
         Arrays.sort(targets);
+        List<File> targetFiles = Arrays.asList(targets);
         System.out.print("ID;R;default");
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
         System.out.println(";best");
-        for (File target : targets) {
-            String id = target.getName();
-            id = id.substring(0, id.length() - 8);
-            if (id.equals("LA051")) break;
-            String traceFile = traceFolder + "/" + id + ".nbt";
-            try (InputStream in = new BufferedInputStream(new FileInputStream(target));
-                 InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
-            ) {
-                Matrix model = Binary.readModel(in);
-                List<Command> defaultTrace = Binary.readTrace(tin);
-                State dfltResult = execute(model, defaultTrace);
-                if (dfltResult == null) {
-                    System.out.println(id + ": invalid default trace.");
-                } else {
-                    long bestEnergy = dfltResult.getEnergy();
-                    String bestSolver = "default";
-                    System.out.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
-                    for (String solverName : solverNames) {
-                        Solver solver = SolverFactory.byName(solverName);
-                        solver.init(model);
-                        List<Command> trace = solver.getCompleteTrace();
-                        State ownResult = execute(model, trace);
-                        if (ownResult == null) {
-                            System.out.print(";invalid");
-                        } else {
-                            System.out.format(";%d", ownResult.getEnergy());
-                            if (ownResult.getEnergy() < bestEnergy) {
-                                bestEnergy = ownResult.getEnergy();
-                                bestSolver = solverName;
-                            }
-                        }
+        targetFiles.parallelStream()
+                .filter(t -> t.getName().compareTo("LA151") < 0)
+                .map(t -> {
+                    try {
+                        return solveProblem(traceFolder, solverNames, t);
+                    } catch (IOException e) {
+                        return t.getName() + ": " + e;
                     }
-                    System.out.println(";" + bestSolver);
-                }
-            }
-        }
+                })
+                .forEach(r -> System.out.println(r));
         long elapsedTime = System.nanoTime() - startTime;
         System.out.format("Elapsed time: %.3f seconds.%n", elapsedTime / 1.0e9);
+    }
+
+    private static String solveProblem(String traceFolder, String[] solverNames, File target) throws IOException {
+        String id = target.getName();
+        id = id.substring(0, id.length() - 8);
+        String traceFile = traceFolder + "/" + id + ".nbt";
+        try (InputStream in = new BufferedInputStream(new FileInputStream(target));
+             InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
+        ) {
+            Matrix model = Binary.readModel(in);
+            List<Command> defaultTrace = Binary.readTrace(tin);
+            State dfltResult = execute(model, defaultTrace);
+            if (dfltResult == null) {
+                return(id + ": invalid default trace.");
+            } else {
+                long bestEnergy = dfltResult.getEnergy();
+                String bestSolver = "default";
+                String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
+                for (String solverName : solverNames) {
+                    Solver solver = SolverFactory.byName(solverName);
+                    solver.init(model);
+                    List<Command> trace = solver.getCompleteTrace();
+                    State ownResult = execute(model, trace);
+                    if (ownResult == null) {
+                        r += ";invalid";
+                    } else {
+                        r += String.format(";%d", ownResult.getEnergy());
+                        if (ownResult.getEnergy() < bestEnergy) {
+                            bestEnergy = ownResult.getEnergy();
+                            bestSolver = solverName;
+                        }
+                    }
+                }
+                r += ";" + bestSolver;
+                return r;
+            }
+        }
     }
 
     private static void usage(int exitCode) {
