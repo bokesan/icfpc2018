@@ -12,6 +12,7 @@ public class SolverFactory {
             case "lowharm": return new LowHarmonicSolver();
             case "lhmulti": return new LHMultiFiller();
             case "moveto": return new LayerSolver();
+            case "twin": return new TwinSolver();
             default: throw new SolverNotFoundException();
         }
     }

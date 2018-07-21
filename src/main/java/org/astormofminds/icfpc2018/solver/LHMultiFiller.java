@@ -14,13 +14,13 @@ public class LHMultiFiller extends LowHarmonicSolver {
             Set<Coordinate> toFill = new HashSet<>();
             toFill.add(underUs);
             Coordinate downLeft = Coordinate.of(x - 1, y - 1, z);
-            if (targetMatrix.get(downLeft) == VoxelState.FULL && currentMatrix.get(downLeft) == VoxelState.VOID) toFill.add(downLeft);
+            if (targetMatrix.contains(downLeft) && targetMatrix.get(downLeft) == VoxelState.FULL && currentMatrix.get(downLeft) == VoxelState.VOID) toFill.add(downLeft);
             Coordinate downRight = Coordinate.of(x + 1, y - 1, z);
-            if (targetMatrix.get(downRight) == VoxelState.FULL && currentMatrix.get(downRight) == VoxelState.VOID) toFill.add(downRight);
+            if (targetMatrix.contains(downRight) && targetMatrix.get(downRight) == VoxelState.FULL && currentMatrix.get(downRight) == VoxelState.VOID) toFill.add(downRight);
             Coordinate downFar = Coordinate.of(x, y - 1, z + 1);
-            if (targetMatrix.get(downFar) == VoxelState.FULL && currentMatrix.get(downFar) == VoxelState.VOID) toFill.add(downFar);
+            if (targetMatrix.contains(downFar) && targetMatrix.get(downFar) == VoxelState.FULL && currentMatrix.get(downFar) == VoxelState.VOID) toFill.add(downFar);
             Coordinate downNear = Coordinate.of(x, y - 1, z - 1);
-            if (targetMatrix.get(downNear) == VoxelState.FULL && currentMatrix.get(downNear) == VoxelState.VOID) toFill.add(downNear);
+            if (targetMatrix.contains(downNear) && targetMatrix.get(downNear) == VoxelState.FULL && currentMatrix.get(downNear) == VoxelState.VOID) toFill.add(downNear);
 
             for (Coordinate current : toFill) {
                 currentMatrix.fill(current);
