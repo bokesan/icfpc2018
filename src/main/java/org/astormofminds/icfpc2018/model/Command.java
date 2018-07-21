@@ -171,4 +171,26 @@ public class Command {
     private int encodeNd(Difference nd) {
         return 9 * (nd.dx + 1) + 3 * (nd.dy + 1) + (nd.dz + 1);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Command command = (Command) o;
+
+        if (m != command.m) return false;
+        if (op != command.op) return false;
+        if (d1 != null ? !d1.equals(command.d1) : command.d1 != null) return false;
+        return d2 != null ? d2.equals(command.d2) : command.d2 == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = op.hashCode();
+        result = 31 * result + (d1 != null ? d1.hashCode() : 0);
+        result = 31 * result + (d2 != null ? d2.hashCode() : 0);
+        result = 31 * result + m;
+        return result;
+    }
 }
