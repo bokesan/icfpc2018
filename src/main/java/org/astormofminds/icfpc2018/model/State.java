@@ -107,10 +107,16 @@ public class State {
                     break;
                 case SMOVE:
                     bot.setPos(c.plus(cmd.getD1()));
+                    if (!matrix.isValid(bot.getPos())) {
+                        throw new ExecutionException("bot moved out of matrix: " + bot.getPos());
+                    }
                     energy += 2L * cmd.getD1().mlen();
                     break;
                 case LMOVE:
                     bot.setPos(c.plus(cmd.getD1()).plus(cmd.getD2()));
+                    if (!matrix.isValid(bot.getPos())) {
+                        throw new ExecutionException("bot moved out of matrix: " + bot.getPos());
+                    }
                     energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
                     break;
                 case FILL:
@@ -129,6 +135,9 @@ public class State {
                         throw new ExecutionException("Fission: too few seeds");
                     }
                     c1 = c.plus(nd);
+                    if (!matrix.isValid(c1)) {
+                        throw new ExecutionException("bot fissured out of matrix: " + bot.getPos());
+                    }
                     bots.add(bot.fissure(c1, m));
                     energy += 24;
                     break;
@@ -216,7 +225,7 @@ public class State {
             }
         }
         if (bots.stream().anyMatch(b -> matrix.isFull(b.getPos()))) {
-            logger.info("bit at full");
+            logger.info("bot at full");
             return false;
         }
         if (bots.stream().anyMatch(b -> bots.stream().anyMatch(b1 -> b.getPos().equals(b1.getPos()) && !b.equals(b1)))) {
