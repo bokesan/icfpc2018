@@ -9,14 +9,14 @@ import java.util.Set;
 
 public class LowHarmonicSolver implements Solver {
 
-    private Matrix targetMatrix = null;
-    private Matrix currentMatrix = null;
-    private List<Command> result;
+    protected Matrix targetMatrix = null;
+    protected Matrix currentMatrix = null;
+    protected List<Command> result;
     private int posx = 0;
     private int posy = 0;
     private int posz = 0;
-    private boolean highHarmonic;
-    private Set<Coordinate> floating;
+    protected boolean highHarmonic;
+    protected Set<Coordinate> floating;
 
     @Override
     public boolean init(Matrix matrix) {
@@ -138,7 +138,7 @@ public class LowHarmonicSolver implements Solver {
         }
     }
 
-    private void fillIfRequired(int y, int z, int x) {
+    protected void fillIfRequired(int y, int z, int x) {
         Coordinate underUs = Coordinate.of(x, y - 1, z);
         if (targetMatrix.get(underUs) == VoxelState.FULL) {
             currentMatrix.fill(underUs);
