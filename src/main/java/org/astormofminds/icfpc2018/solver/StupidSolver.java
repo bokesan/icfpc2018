@@ -1,6 +1,7 @@
 package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,11 +37,11 @@ public class StupidSolver implements Solver {
         for (int y = 1; y < resolution; y++) {
 
             //on each layer, move from near to far on odd layers, omitting the last row
-            if (y % 2 == 1) {
+            if (Util.odd(y)) {
                 for (int z = 1; z < resolution - 1; z++) {
 
                     //in each row, move right on odd rows and left in even ones
-                    if (z % 2 == 1) {
+                    if (Util.odd(z)) {
                         //odd row - move right
                         for (int x = 1; x < resolution - 1; x++) {
                             Coordinate underUs = Coordinate.of(x, y - 1, z);
@@ -81,7 +82,7 @@ public class StupidSolver implements Solver {
                 for (int z = resolution - 2; z > 0; z--) {
 
                     //in each row, move right on even rows and left in odd ones
-                    if (z % 2 == 0) {
+                    if (Util.even(z)) {
                         //odd row - move right
                         for (int x = 1; x < resolution - 1; x++) {
                             Coordinate underUs = Coordinate.of(x, y - 1, z);
@@ -124,10 +125,10 @@ public class StupidSolver implements Solver {
         //return home - first disable high energy
         result.add(Command.FLIP);
         //move to nearest row
-        if (resolution % 2 == 1) {
+        if (Util.odd(resolution)) {
             result.add(Command.NEAR);
         } else {
-            for (int z = resolution -2; z > 0; z--) {
+            for (int z = resolution - 2; z > 0; z--) {
                 result.add(Command.NEAR);
             }
         }
@@ -136,7 +137,7 @@ public class StupidSolver implements Solver {
             result.add(Command.DOWN);
         }
         //move back to left - either one step if the resolution is even or all the way if it is odd
-        if (resolution % 2 == 0) {
+        if (Util.even(resolution)) {
             result.add(Command.LEFT);
         } else {
             for (int x = resolution -2; x > 0; x--) {

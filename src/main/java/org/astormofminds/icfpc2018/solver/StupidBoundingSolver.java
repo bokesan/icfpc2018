@@ -1,6 +1,7 @@
 package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public class StupidBoundingSolver implements Solver {
         for (int y = ymin + 1; y < ymax + 2; y++) {
 
             //on each layer, move from near to far on odd layers, omitting the last row
-            if ((y - ymin) % 2 == 1) {
+            if (Util.odd(y - ymin)) {
                 for (int z = zmin; z <= zmax; z++) {
 
                     //in each row, move right on odd rows and left in even ones
@@ -99,7 +100,7 @@ public class StupidBoundingSolver implements Solver {
                 for (int z = zmax; z >= zmin; z--) {
 
                     //in each row, move right on even rows and left in odd ones
-                    if ((z - zmin) % 2 == 1) {
+                    if (Util.odd(z - zmin)) {
                         //odd row - move right
                         for (int x = xmin; x <= xmax; x++) {
                             Coordinate underUs = Coordinate.of(x, y - 1, z);
