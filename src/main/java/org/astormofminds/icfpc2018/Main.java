@@ -2,6 +2,7 @@ package org.astormofminds.icfpc2018;
 
 import org.astormofminds.icfpc2018.io.Binary;
 import org.astormofminds.icfpc2018.model.Command;
+import org.astormofminds.icfpc2018.model.ExecutionException;
 import org.astormofminds.icfpc2018.model.Matrix;
 import org.astormofminds.icfpc2018.model.State;
 import org.astormofminds.icfpc2018.solver.Solver;
@@ -9,10 +10,7 @@ import org.astormofminds.icfpc2018.solver.SolverFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.List;
 
 public class Main {
@@ -47,6 +45,12 @@ public class Main {
                 }
                 solve(args[1], args[2], args[3]);
                 break;
+            case "solveAll":
+                if (args.length != 4) {
+                    usage(1);
+                }
+                solveAll(args[1], args[2], args[3]);
+                break;
             default:
                 usage(1);
         }
@@ -58,6 +62,47 @@ public class Main {
         solver.init(model);
         List<Command> trace = solver.getCompleteTrace();
         Binary.writeTrace(traceFile, trace);
+    }
+
+    private static void solveAll(String targetFolder, String traceFolder, String solverName) throws IOException {
+        File targetDir = new File(targetFolder);
+        File[] targets = targetDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith("_tgt.mdl");
+            }
+        });
+        System.out.println("ID;default;solver;percent");
+        for (File target : targets) {
+            String id = target.getName();
+            id = id.substring(0, id.length() - 8);
+            String traceFile = traceFolder + "/" + id + ".nbt";
+            try (InputStream in = new BufferedInputStream(new FileInputStream(target));
+                 InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
+            ) {
+                Matrix model = Binary.readModel(in);
+                List<Command> defaultTrace = Binary.readTrace(tin);
+                State dfltResult = execute(model, defaultTrace);
+                if (dfltResult == null) {
+                    System.out.println(id + ": invalid default trace.");
+                } else {
+                    Solver solver = SolverFactory.byName(solverName);
+                    solver.init(model);
+                    List<Command> trace = solver.getCompleteTrace();
+                    State ownResult = execute(model, trace);
+                    if (ownResult == null) {
+                        System.out.println(id + ": solver generated invalid trace.");
+                    } else {
+                        System.out.format("%s;%d;%d;%.1f%n",
+                                id,
+                                dfltResult.getEnergy(),
+                                ownResult.getEnergy(),
+                                100.0 * ownResult.getEnergy() / dfltResult.getEnergy());
+                    }
+                }
+            }
+        }
+
     }
 
     private static void usage(int exitCode) {
@@ -139,4 +184,22 @@ public class Main {
         }
     }
 
+    private static State execute(Matrix target, List<Command> trace) {
+        try {
+            State state = new State(target.getResolution(), trace);
+            for (; ; ) {
+                if (!state.timeStep()) {
+                    break;
+                }
+            }
+            if (state.isValidFinalState(target)) {
+                return state;
+            } else {
+                return null;
+            }
+        } catch (ExecutionException ex) {
+            logger.error("Execution exception: {}", ex.getMessage());
+            return null;
+        }
+    }
 }

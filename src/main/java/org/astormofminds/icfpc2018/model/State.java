@@ -26,6 +26,10 @@ public class State {
         bots.add(bot1);
     }
 
+    public long getEnergy() {
+        return energy;
+    }
+
     public int getResolution() {
         return matrix.getResolution();
     }
@@ -54,7 +58,7 @@ public class State {
      */
     public boolean timeStep() {
         if ((steps & 8191) == 0) {
-            logger.info("steps: " + steps);
+            logger.debug("steps: {}", steps);
             if (!isWellFormed()) {
                 throw new ExecutionException("not well-formed");
             }
