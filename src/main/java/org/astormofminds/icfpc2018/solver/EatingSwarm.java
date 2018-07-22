@@ -6,7 +6,7 @@ import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedExcepti
 import java.util.ArrayList;
 import java.util.List;
 
-public class EatingSwarm implements Solver {
+class EatingSwarm implements Solver {
 
     private Matrix currentMatrix = null;
     protected List<Command> result;
@@ -25,7 +25,10 @@ public class EatingSwarm implements Solver {
     @Override
     public boolean initDeconstruct(Matrix matrix) {
         currentMatrix = matrix;
-        return true;
+        Region box = currentMatrix.getBoundingBox();
+        int xmin = box.getMinX();
+        int xmax = box.getMaxX();
+        return xmax - xmin <= 120;
     }
 
     @Override

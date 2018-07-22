@@ -5,11 +5,9 @@ import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedExcepti
 import org.astormofminds.icfpc2018.solver.exceptions.WrongNumberOfBotsException;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class Surround2 implements Solver {
+class Reconstructor implements Solver {
 
     private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
@@ -19,13 +17,10 @@ public class Surround2 implements Solver {
     private int posz = 0;
     private boolean harmonicHigh;
     private boolean switchOff;
-    private Set<Coordinate> fresh;
-    private Set<Coordinate> floating;
 
     @Override
     public boolean initAssemble(Matrix matrix) {
-        this.targetMatrix = matrix;
-        return true;
+        return false;
     }
 
     @Override
@@ -35,7 +30,13 @@ public class Surround2 implements Solver {
 
     @Override
     public boolean initReconstruct(Matrix source, Matrix target) {
-        return false;
+        currentMatrix = source;
+        targetMatrix = target;
+        Region targetRegion = targetMatrix.getBoundingBox();
+        Region sourceRegion = currentMatrix.getBoundingBox();
+        int xmin = Math.min(sourceRegion.getMinX(), targetRegion.getMinX());
+        int xmax = Math.max(sourceRegion.getMaxX(), targetRegion.getMaxX());
+        return xmax - xmin <= 120;
     }
 
     @Override
@@ -48,13 +49,14 @@ public class Surround2 implements Solver {
             return result;
         }
 
-        Region box = targetMatrix.getBoundingBox();
-        int xmin = box.getMinX();
-        int ymin = box.getMinY();
-        int zmin = box.getMinZ();
-        int xmax = box.getMaxX();
-        int ymax = box.getMaxY();
-        int zmax = box.getMaxZ();
+        Region targetRegion = targetMatrix.getBoundingBox();
+        Region sourceRegion = currentMatrix.getBoundingBox();
+        int xmin = Math.min(sourceRegion.getMinX(), targetRegion.getMinX());
+        int ymin = Math.min(sourceRegion.getMinY(), targetRegion.getMinY());
+        int zmin = Math.min(sourceRegion.getMinZ(), targetRegion.getMinZ());
+        int xmax = Math.max(sourceRegion.getMaxX(), targetRegion.getMaxX());
+        int ymax = Math.max(sourceRegion.getMaxY(), targetRegion.getMaxY());
+        int zmax = Math.max(sourceRegion.getMaxZ(), targetRegion.getMaxZ());
 
         //lets start by only caring about those where we can get away with one long line of bots
         if (xmax - xmin > 120) {
@@ -80,11 +82,8 @@ public class Surround2 implements Solver {
             posz += steps;
         }
 
-        currentMatrix = new Matrix(targetMatrix.getResolution());
         harmonicHigh = false;
         switchOff = false;
-        fresh = new HashSet<>();
-        floating = new HashSet<>();
 
         //spawn bots
         int numBotsToSpawn = (xmax - xmin + 1) / 3;
@@ -112,13 +111,13 @@ public class Surround2 implements Solver {
         }
         int numBots = numBotsToSpawn + 1;
 
-        //print all layers
+        //correct all layers
         boolean moveAway = true;
         for (int y = ymin + 1; y < ymax + 2; y += 3) {
             int issuedCommands = result.size();
             if (moveAway) {
                 for (int z = zmin -1; z <= zmax + 1; z++) {
-                    allFill(numBots, -1);
+                    fixAll(numBots, -1);
                     //move one away, unless it is the last run through
                     if (z < zmax + 1) {
                         moveFar(numBots);
@@ -129,9 +128,8 @@ public class Surround2 implements Solver {
                     moveUp(numBots, 3);
                 }
             } else {
-                // move from far to near on even layers
                 for (int z = zmax + 1; z >= zmin - 1; z--) {
-                    allFill(numBots, 1);
+                    fixAll(numBots, 1);
                     //move one here, unless it is the last run through
                     if (z > zmin - 1) {
                         moveNear(numBots);
@@ -140,14 +138,6 @@ public class Surround2 implements Solver {
                 // move 3 up, unless it is the last run through
                 if (y < ymax - 1) {
                     moveUp(numBots, 3);
-                }
-            }
-            if (switchOff) {
-                switchOff = false;
-                harmonicHigh = false;
-                result.add(Command.FLIP);
-                for (int i = 1; i < numBots; i++) {
-                    result.add(Command.WAIT);
                 }
             }
             moveAway = !moveAway;
@@ -188,20 +178,20 @@ public class Surround2 implements Solver {
         }
 
         //return home
-        while (posz > 0) {
-            int steps = Math.min(15, posz);
-            result.add(Command.sMove(Difference.of(0, 0, -steps)));
-            posz -= steps;
-        };
-        while (posy > 0) {
-            int steps = Math.min(15, posy);
-            result.add(Command.sMove(Difference.of(0, -steps, 0)));
-            posy -= steps;
-        }
         while (posx > 0) {
             int steps = Math.min(15, posx);
             result.add(Command.sMove(Difference.of(-steps, 0, 0)));
             posx -= steps;
+        }
+        while (posz > 0) {
+            int steps = Math.min(15, posz);
+            result.add(Command.sMove(Difference.of(0, 0, -steps)));
+            posz -= steps;
+        }
+        while (posy > 0) {
+            int steps = Math.min(15, posy);
+            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            posy -= steps;
         }
         //end finally, stop
         result.add(Command.HALT);
@@ -219,76 +209,110 @@ public class Surround2 implements Solver {
         }
     }
 
-    private void allFill(int numBots, int zFill) {
+    private void fixAll(int numBots, int zFill) {
         int extraSteps = 0;
-        //fill fields below
+        //flip fields below
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x - 1, posy - 1, posz, -1, -1, 0);
+            flipIfRequired(x - 1, posy - 1, posz, -1, -1, 0, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x, posy - 1, posz, 0, -1, 0);
+            flipIfRequired(x, posy - 1, posz, 0, -1, 0, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x + 1, posy - 1, posz, 1, -1, 0);
-        }
-        extraSteps += checkHarmonic(numBots);
-
-        //fill fields same level
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x - 1, posy, posz, -1, 0, 0);
+            flipIfRequired(x + 1, posy - 1, posz, 1, -1, 0, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x, posy, posz + zFill, 0, 0, zFill);
+            flipIfRequired(x, posy - 1, posz - 1, 1, -1, -1, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x + 1, posy, posz, 1, 0, 0);
+            flipIfRequired(x, posy - 1, posz + 1, 1, -1, 1, false);
         }
         extraSteps += checkHarmonic(numBots);
 
-        //fields above
+        //flip fields same level
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x - 1, posy + 1, posz, -1, 1, 0);
+            flipIfRequired(x - 1, posy, posz, -1, 0, 0, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x, posy + 1, posz, 0, 1, 0);
+            flipIfRequired(x - 1, posy, posz - 1, -1, 0, -1, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x + 1, posy + 1, posz, 1, 1, 0);
+            flipIfRequired(x - 1, posy, posz + 1, -1, 0, 1, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x, posy, posz + zFill, 0, 0, zFill, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x, posy, posz - zFill, 0, 0, -zFill, true);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x + 1, posy, posz, 1, 0, 0, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x + 1, posy, posz - 1, 1, 0, -1, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x + 1, posy, posz + 1, 1, 0, 1, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+
+        //flip fields above
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x - 1, posy + 1, posz, -1, 1, 0, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x, posy + 1, posz, 0, 1, 0, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x + 1, posy + 1, posz, 1, 1, 0, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x, posy + 1, posz - 1, 0, 1, -1, false);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            flipIfRequired(x, posy + 1, posz + 1, 0, 1, 1, false);
         }
         extraSteps += checkHarmonic(numBots);
 
         //optimize waits
-        Optimizer.optimizeBotWaits(9 + extraSteps, numBots, result);
+        Optimizer.optimizeBotWaits(18 + extraSteps, numBots, result);
     }
 
     private int checkHarmonic(int numbots) {
-        Set<Coordinate> floats = new HashSet<>();
-        for (Coordinate c : fresh) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
-        for (Coordinate c : floating) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
-        floating.clear();
-        fresh.clear();
-        floating.addAll(floats);
-
-        if (floating.isEmpty()) {
+        if (currentMatrix.allGrounded()) {
             if (harmonicHigh) switchOff = true;
         } else {
             switchOff = false;
@@ -314,7 +338,7 @@ public class Surround2 implements Solver {
         return 0;
     }
 
-    private void fillIfRequired(int x, int y, int z, int divx, int divy, int divz) {
+    private void flipIfRequired(int x, int y, int z, int divx, int divy, int divz, boolean forceDelete) {
         if (!(x >= 0 && y >= 0 && z >= 0 &&
                 x < targetMatrix.getResolution() &&
                 y < targetMatrix.getResolution() &&
@@ -322,10 +346,14 @@ public class Surround2 implements Solver {
             addWait();
             return;
         }
-        Coordinate toFill = Coordinate.of(x, y , z);
-        if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
-            currentMatrix.fill(toFill);
-            fresh.add(toFill);
+        Coordinate toCheck = Coordinate.of(x, y , z);
+        if (currentMatrix.isFull(toCheck) && (forceDelete || !targetMatrix.isFull(toCheck))) {
+            //we have to delete
+            currentMatrix.unfill(toCheck);
+            result.add(Command.void_(Difference.of(divx, divy, divz)));
+        } else if (!currentMatrix.isFull(toCheck) && targetMatrix.isFull(toCheck)) {
+            //we have to create
+            currentMatrix.fill(toCheck);
             result.add(Command.fill(Difference.of(divx, divy, divz)));
         } else {
             addWait();

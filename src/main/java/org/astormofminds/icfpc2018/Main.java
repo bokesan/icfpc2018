@@ -165,7 +165,7 @@ public class Main {
                 State result;
                 if (trace == null) {
                     result = null;
-                    logger.error("generating trace failed for {} with solver: {}", id, solverName);
+                    logger.warn("solver initialization failed {} with solver: {}", id, solverName);
                 } else {
                     long elapsed = System.nanoTime() - startTime;
                     logger.info("generate trace for {} with solver {}: {}s", id, solverName,
@@ -173,7 +173,7 @@ public class Main {
                     result = execute(id, solverName, mode, model, trace);
                 }
                 if (result == null) {
-                    if (STOP_ON_ERROR) {
+                    if (trace != null && STOP_ON_ERROR) {
                         System.exit(1);
                     }
                     r += ";invalid";

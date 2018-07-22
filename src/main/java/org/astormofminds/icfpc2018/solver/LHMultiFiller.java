@@ -6,7 +6,7 @@ import org.astormofminds.icfpc2018.solver.old.LowHarmonicSolver;
 import java.util.HashSet;
 import java.util.Set;
 
-public class LHMultiFiller extends LowHarmonicSolver {
+class LHMultiFiller extends LowHarmonicSolver {
 
     @Override
     protected void fillIfRequired(int y, int z, int x) {

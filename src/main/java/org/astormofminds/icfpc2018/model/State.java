@@ -155,21 +155,11 @@ public class State {
         {
             throw new ExecutionException("multiple bots on region edge");
         }
-        region.coordinates().forEach(c2 -> {
-            if (cmd.getOp() == Command.Op.GFILL) {
-                if (matrix.fill(c2)) {
-                    energy += 12;
-                } else {
-                    energy += 6;
-                }
-            } else {
-                if (matrix.unfill(c2)) {
-                    energy -= 12;
-                } else {
-                    energy += 3;
-                }
-            }
-        });
+        if (cmd.getOp() == Command.Op.GFILL) {
+            region.coordinates().forEach(this::processFill);
+        } else {
+            region.coordinates().forEach(this::processVoid);
+        }
     }
 
     private void performFusion(List<BotCommand> group) {
@@ -214,19 +204,27 @@ public class State {
 
     private void performVoid(BotCommand bc) {
         Coordinate c1 = bc.bot.getPos().plus(bc.command.getD1());
-        if (matrix.unfill(c1)) {
-            energy -= 12;
-        } else {
-            energy += 3;
-        }
+        processVoid(c1);
     }
 
     private void performFill(BotCommand bc) {
         Coordinate c1 = bc.bot.getPos().plus(bc.command.getD1());
+        processFill(c1);
+    }
+
+    private void processFill(Coordinate c1) {
         if (matrix.fill(c1)) {
             energy += 12;
         } else {
             energy += 6;
+        }
+    }
+
+    private void processVoid(Coordinate c1) {
+        if (matrix.unfill(c1)) {
+            energy -= 12;
+        } else {
+            energy += 3;
         }
     }
 

@@ -7,7 +7,7 @@ import org.astormofminds.icfpc2018.solver.exceptions.WrongNumberOfBotsException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Eating2 implements Solver {
+class Eating2 implements Solver {
 
     private Matrix currentMatrix = null;
     protected List<Command> result;
@@ -26,7 +26,10 @@ public class Eating2 implements Solver {
     @Override
     public boolean initDeconstruct(Matrix matrix) {
         currentMatrix = matrix;
-        return true;
+        Region box = currentMatrix.getBoundingBox();
+        int xmin = box.getMinX();
+        int xmax = box.getMaxX();
+        return xmax - xmin <= 120;
     }
 
     @Override
