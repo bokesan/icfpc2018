@@ -60,7 +60,7 @@ public class Main {
     private static void solve(String modelFile, String traceFile, String solverName) throws IOException {
         Solver solver = SolverFactory.byName(solverName);
         Matrix model = Binary.readModel(new FileInputStream(modelFile));
-        solver.init(model);
+        solver.initAssemble(model);
         List<Command> trace = solver.getCompleteTrace();
         Binary.writeTrace(traceFile, trace);
     }
@@ -108,7 +108,7 @@ public class Main {
                 String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                 for (String solverName : solverNames) {
                     Solver solver = SolverFactory.byName(solverName);
-                    solver.init(model);
+                    solver.initAssemble(model);
                     List<Command> trace = solver.getCompleteTrace();
                     State ownResult = execute(model, trace);
                     if (ownResult == null) {
