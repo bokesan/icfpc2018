@@ -1,5 +1,6 @@
 # Private ID file for contest
 ops/privateID
+out/
 
 # Compiled class file
 *.class

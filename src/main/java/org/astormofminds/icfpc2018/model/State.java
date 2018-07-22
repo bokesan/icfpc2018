@@ -18,8 +18,8 @@ public class State {
     private final LinkedList<Command> trace = new LinkedList<>();
     private int steps = 0;
 
-    public State(int resolution, Collection<Command> trace) {
-        matrix = new Matrix(resolution);
+    public State(Collection<Command> trace, Matrix matrix) {
+        this.matrix = matrix;
         this.trace.addAll(trace);
         bots = new TreeSet<>();
         Nanobot bot1 = Nanobot.initial();
@@ -61,7 +61,7 @@ public class State {
      * {@code false} if the system is halted after the time step.
      */
     public boolean timeStep() {
-        if ((steps & 8191) == 0) {
+        if ((steps & 1023) == 0) {
             logger.debug("steps: {}", steps);
             if (!isWellFormed()) {
                 throw new ExecutionException("not well-formed");
@@ -86,6 +86,7 @@ public class State {
             Nanobot bot = bc.bot;
             Coordinate c = bot.getPos();
             Command cmd = bc.command;
+            // logger.info("step: {} bot: {} command: {}", steps, bot, cmd);
             switch (cmd.getOp()) {
                 case HALT:
                     if (!c.isOrigin()) {
@@ -112,14 +113,14 @@ public class State {
                 case SMOVE:
                     bot.setPos(c.plus(cmd.getD1()));
                     if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException("bot moved out of matrix: " + bot.getPos());
+                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot.getPos() + " [steps=" + steps + "]");
                     }
                     energy += 2L * cmd.getD1().mlen();
                     break;
                 case LMOVE:
                     bot.setPos(c.plus(cmd.getD1()).plus(cmd.getD2()));
                     if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException("bot moved out of matrix: " + bot.getPos());
+                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot.getPos());
                     }
                     energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
                     break;
@@ -144,11 +145,11 @@ public class State {
                     int m = cmd.getM();
                     int n = bot.getSeeds().size();
                     if (n == 0 || n <= m) {
-                        throw new ExecutionException("Fission: too few seeds");
+                        throw new ExecutionException(cmd + ": too few seeds");
                     }
                     c1 = c.plus(nd);
                     if (!matrix.isValid(c1)) {
-                        throw new ExecutionException("bot fissured out of matrix: " + bot.getPos());
+                        throw new ExecutionException(cmd + ": bot fissured out of matrix: " + bot.getPos());
                     }
                     bots.add(bot.fissure(c1, m));
                     energy += 24;
@@ -156,7 +157,7 @@ public class State {
                 case FUSIONP:
                 case FUSIONS:
                     if (group.size() != 2) {
-                        throw new ExecutionException("invalid fusion group size (bots=" + bots.size() + "): " + group.size());
+                        throw new ExecutionException(cmd + ": invalid fusion group size (bots=" + bots.size() + "): " + group.size());
                     }
                     BotCommand bcs;
                     if (cmd.getOp() == Command.Op.FUSIONP) {
@@ -175,19 +176,19 @@ public class State {
                     c1 = c.plus(cmd.getD1());
                     Region region = Region.of(c1, c1.plus(cmd.getD2()));
                     if (group.size() != (1 << region.dim())) {
-                        throw new ExecutionException("GFill/GVoid mismatch: region "
+                        throw new ExecutionException(cmd + ": GFill/GVoid mismatch: region "
                                 + region + ", dim " + region.dim()
                                 + ", but group size " + group.size()
                                 + " (expected " + (1 << region.dim()) + ")");
                     }
                     if (group.stream().anyMatch(x -> x.command.getOp() != cmd.getOp())) {
-                        throw new ExecutionException("mixture of GFill and GVoid");
+                        throw new ExecutionException(cmd + ": mixture of GFill and GVoid");
                     }
                     if (!region.isValid(getResolution())) {
-                        throw new ExecutionException("invalid region: " + region);
+                        throw new ExecutionException(cmd + ": invalid region: " + region);
                     }
                     if (group.stream().anyMatch(bc1 -> region.contains(bc1.bot.getPos()))) {
-                        throw new ExecutionException("bot inside region");
+                        throw new ExecutionException(cmd + ": bot inside region");
                     }
                     if (group.stream().map(x -> x.bot.getPos().plus(x.command.getD1()))
                             .collect(Collectors.toSet()).size() < group.size())

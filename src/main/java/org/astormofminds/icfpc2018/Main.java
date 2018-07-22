@@ -78,13 +78,14 @@ public class Main {
         long startTime = System.nanoTime();
         File targetDir = new File(problemFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
+        Arrays.sort(targets);
         List<File> targetFiles = Arrays.asList(targets);
         System.out.print("ID;R;default");
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
         System.out.println(";bestSolver;bestEnergy");
-        targetFiles.parallelStream()
+        targetFiles.stream()
                 .map(t -> {
                     try {
                         return solveProblem(traceFolder, solverNames, t);
@@ -123,7 +124,7 @@ public class Main {
         ) {
             Matrix model = Binary.readModel(in);
             List<Command> defaultTrace = Binary.readTrace(tin);
-            State dfltResult = execute(mode, model, defaultTrace);
+            State dfltResult = execute(id, "default", mode, model, defaultTrace);
             if (dfltResult == null) {
                 return(id + ": invalid default trace.");
             } else {
@@ -135,16 +136,16 @@ public class Main {
                     Solver solver = SolverFactory.byName(solverName);
                     switch (mode) {
                         case ASSEMBLE:
-                            solver.initAssemble(model);
+                            solver.initAssemble(new Matrix(model));
                             break;
                         case DESTRUCT:
-                            solver.initDeconstruct(model);
+                            solver.initDeconstruct(new Matrix(model));
                             break;
                         default:
                             throw new AssertionError("not implemented");
                     }
                     List<Command> trace = solver.getCompleteTrace();
-                    State ownResult = execute(mode, model, trace);
+                    State ownResult = execute(id, solverName, mode, model, trace);
                     if (ownResult == null) {
                         r += ";invalid";
                     } else {
@@ -234,7 +235,7 @@ public class Main {
             Matrix model = Binary.readModel(ms);
             logger.info("loading trace...");
             List<Command> trace = Binary.readTrace(ts);
-            State state = new State(model.getResolution(), trace);
+            State state = new State(trace, new Matrix(model.getResolution()));
             long t0 = System.nanoTime();
             for (;;) {
                 if (!state.timeStep()) {
@@ -252,18 +253,26 @@ public class Main {
         }
     }
 
-    private static State execute(ProblemMode mode, Matrix target, List<Command> trace) {
+    private static State execute(String problemId, String solver, ProblemMode mode, Matrix model, List<Command> trace) {
+        logger.info("execute {} with solver '{}'", problemId, solver);
         try {
-            State state = new State(target.getResolution(), trace);
-            for (; ; ) {
-                if (!state.timeStep()) {
+            State state;
+            switch (mode) {
+                case ASSEMBLE:
+                    state = new State(trace, new Matrix(model.getResolution()));
                     break;
-                }
+                case DESTRUCT:
+                    state = new State(trace, new Matrix(model));
+                    break;
+                default:
+                    throw new AssertionError();
             }
+            while (state.timeStep())
+                ;
             boolean validResult;
             switch (mode) {
                 case ASSEMBLE:
-                    validResult = state.isValidFinalState(target);
+                    validResult = state.isValidFinalState(model);
                     break;
                 case DESTRUCT:
                     validResult = state.isMatrixEmpty();
@@ -273,7 +282,8 @@ public class Main {
             }
             return validResult ? state : null;
         } catch (ExecutionException ex) {
-            logger.error("Execution exception: {}", ex.getMessage());
+            logger.error("Execution exception in problem " + problemId + " with solver '" + solver + "'", ex);
+            System.exit(1);
             return null;
         }
     }

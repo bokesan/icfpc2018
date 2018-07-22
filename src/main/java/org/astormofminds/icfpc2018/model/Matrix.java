@@ -15,6 +15,12 @@ public class Matrix {
         this.grounded = new BitSet();
     }
 
+    public Matrix(Matrix source) {
+        this.resolution = source.getResolution();
+        this.voxels = (BitSet) source.voxels.clone();
+        this.grounded = (BitSet) source.grounded.clone();
+    }
+
     public int getResolution() {
         return resolution;
     }
