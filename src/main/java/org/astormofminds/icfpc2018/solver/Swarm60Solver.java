@@ -229,6 +229,13 @@ public class Swarm60Solver implements Solver {
     }
 
     private void fillIfRequiredLeft(int x, int y, int z) {
+        if (!(x >= 0 && y >= 0 && z >= 0 &&
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
+            addWait();
+            return;
+        }
         Coordinate toFill = Coordinate.of(x, y , z);
         if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
             currentMatrix.fill(toFill);
@@ -240,6 +247,13 @@ public class Swarm60Solver implements Solver {
     }
 
     private void fillIfRequiredCenter(int x, int y, int z) {
+        if (!(x >= 0 && y >= 0 && z >= 0 &&
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
+            addWait();
+            return;
+        }
         Coordinate toFill = Coordinate.of(x, y , z);
         if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
             currentMatrix.fill(toFill);
@@ -251,6 +265,13 @@ public class Swarm60Solver implements Solver {
     }
 
     private void fillIfRequiredRight(int x, int y, int z) {
+        if (!(x >= 0 && y >= 0 && z >= 0 &&
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
+            addWait();
+            return;
+        }
         Coordinate toFill = Coordinate.of(x, y , z);
         if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
             currentMatrix.fill(toFill);
