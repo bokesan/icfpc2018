@@ -22,7 +22,15 @@ class Zapper implements Solver {
     @Override
     public boolean initDeconstruct(Matrix matrix) {
         currentMatrix = matrix;
-        return true;
+        Region box = currentMatrix.getBoundingBox();
+        int xmin = box.getMinX();
+        int zmin = box.getMinZ();
+        int xmax = box.getMaxX();
+        int ymax = box.getMaxY();
+        int zmax = box.getMaxZ();
+
+        //we can only zap a region max 30*30*30
+        return !(xmax - xmin > 30 || ymax > 30 || zmax - zmin > 30);
     }
 
     @Override
@@ -48,7 +56,7 @@ class Zapper implements Solver {
         int zmax = box.getMaxZ();
 
         //we can only zap a region max 30*30*30
-        if (xmax - xmin + 1 > 30 || ymax > 30 || zmax -zmin + 1 > 30) {
+        if (xmax - xmin > 30 || ymax > 30 || zmax -zmin > 30) {
             result.add(Command.HALT);
             return result;
         }
