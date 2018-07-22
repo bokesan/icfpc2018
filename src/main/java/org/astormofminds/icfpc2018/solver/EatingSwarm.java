@@ -80,7 +80,7 @@ public class EatingSwarm implements Solver {
         int numBotsToSpawn = (xmax - xmin + 1) / 3;
         //if we cover it perfectly, we subtract on for the existing bot
         if ((xmax - xmin + 1) % 3 == 0) numBotsToSpawn--;
-        if (numBotsToSpawn > 19) {
+        if (numBotsToSpawn > 39) {
             result.add(Command.HALT);
             return result;
         }

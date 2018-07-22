@@ -88,7 +88,7 @@ public class SurroundSwarmSolver implements Solver {
         int numBotsToSpawn = (xmax - xmin + 1) / 3;
         //if we cover it perfectly, we subtract on for the existing bot
         if ((xmax - xmin + 1) % 3 == 0) numBotsToSpawn--;
-        if (numBotsToSpawn > 19) {
+        if (numBotsToSpawn > 39) {
             result.add(Command.HALT);
             return result;
         }
@@ -111,9 +111,9 @@ public class SurroundSwarmSolver implements Solver {
         int numBots = numBotsToSpawn + 1;
 
         //print all layers
+        boolean moveAway = true;
         for (int y = ymin + 1; y < ymax + 2; y += 3) {
-            //on each layer, move from near to far on odd layers, omitting the last row
-            if ((y - ymin) % 2 == 1) {
+            if (moveAway) {
                 for (int z = zmin -1; z <= zmax + 1; z++) {
                     allFill(numBots, -1);
                     //move one away, unless it is the last run through
@@ -147,6 +147,7 @@ public class SurroundSwarmSolver implements Solver {
                     result.add(Command.WAIT);
                 }
             }
+            moveAway = !moveAway;
         }
 
         //merge all bots through fusion
