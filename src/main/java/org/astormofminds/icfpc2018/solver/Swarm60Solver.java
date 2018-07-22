@@ -82,7 +82,7 @@ public class Swarm60Solver implements Solver {
         int numBotsToSpawn = (xmax - xmin) / 3;
         //if we cover it perfectly, we subtract on for the existing bot
         if ((xmax - xmin) % 3 == 0) numBotsToSpawn--;
-        if (numBotsToSpawn > 19) {
+        if (numBotsToSpawn > 39) {
             result.add(Command.HALT);
             return result;
         }

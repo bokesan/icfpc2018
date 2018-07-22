@@ -83,7 +83,7 @@ public class Zapper implements Solver {
         while (z1 < zmax - 1) {
             result.add(Command.WAIT);
             result.add(Command.WAIT);
-            int steps = Math.min(15, zmax + 1 - z1);
+            int steps = Math.min(15, zmax - 1 - z1);
             result.add(Command.sMove(Difference.ofZ(steps)));
             result.add(Command.sMove(Difference.ofZ(steps)));
             z1 += steps;
@@ -95,7 +95,7 @@ public class Zapper implements Solver {
         result.add(Command.fission(Difference.ofY(1), 5));
         //move bots 5 - 8
         int y1 = 1;
-        while (y1 < ymax - 1) {
+        while (y1 < ymax) {
             int steps = Math.min(15, ymax - y1);
             result.add(Command.WAIT);
             result.add(Command.WAIT);
@@ -114,11 +114,11 @@ public class Zapper implements Solver {
         int zdif = zmax - zmin;
         result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ydif, zdif)));         //1
         result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ydif, zdif)));       //2
-        result.add(Command.gVoid(Difference.of(-1, 0, -1), Difference.of(-xdif, ydif, -zdif)));     //4
-        result.add(Command.gVoid(Difference.of(-1, 0, -1), Difference.of(-xdif, -ydif, -zdif)));    //8
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ydif, -zdif)));     //4
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ydif, -zdif)));    //8
         result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ydif, zdif)));      //6
-        result.add(Command.gVoid(Difference.of(1, 0, -1), Difference.of(xdif, ydif, -zdif)));       //3
-        result.add(Command.gVoid(Difference.of(1, 0, -1), Difference.of(xdif, -ydif, -zdif)));      //7
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ydif, -zdif)));       //3
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ydif, -zdif)));      //7
         result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ydif, zdif)));        //5
 
         //merge bots again
