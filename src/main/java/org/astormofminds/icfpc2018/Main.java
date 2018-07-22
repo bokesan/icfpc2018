@@ -94,6 +94,7 @@ public class Main {
                     try {
                         return solveProblem(traceFolder, solverNames, t);
                     } catch (IOException e) {
+                        logger.error("IO Exception", e);
                         return t.getName() + ": " + e;
                     }
                 })
