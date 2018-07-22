@@ -1,6 +1,7 @@
 # Private ID file for contest
 ops/privateID
 out/
+test*.bat
 
 # Compiled class file
 *.class

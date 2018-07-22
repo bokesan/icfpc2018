@@ -26,9 +26,7 @@ public class Matrix {
     }
 
     private void check(Coordinate c) {
-        if (c.getX() < 0 || c.getX() >= resolution
-            || c.getY() < 0 || c.getY() >= resolution
-            || c.getZ() < 0 || c.getZ() >= resolution)
+        if (!c.isValid(resolution))
             throw new IllegalArgumentException("coordinate out of bounds (r=" + resolution + "): " + c);
     }
 
@@ -45,7 +43,6 @@ public class Matrix {
     }
 
     private int index(Coordinate c) {
-        check(c);
         return index(c.getX(), c.getY(), c.getZ());
     }
 
@@ -54,6 +51,9 @@ public class Matrix {
     }
 
     public boolean isFull(Coordinate c) {
+        if (!isValid(c)) {
+            throw new IllegalArgumentException("invalid coordinate: " + c);
+        }
         return voxels.get(index(c));
     }
 
@@ -67,6 +67,14 @@ public class Matrix {
      * {@code false} if it was already FULL.
      */
     public boolean fill(Coordinate c) {
+        // FIXME: should be isValidForFill, but "twin" solver needs this
+        if (!isValid(c)) {
+            throw new ExecutionException("coordinate not valid for fill: " + c);
+        }
+        return fillUnsafe(c);
+    }
+
+    private boolean fillUnsafe(Coordinate c) {
         int i = index(c);
         if (voxels.get(i)) {
             return false;
@@ -83,6 +91,9 @@ public class Matrix {
      * {@code false} if it was already VOID.
      */
     public boolean unfill(Coordinate c) {
+        if (!isValid(c)) {
+            throw new ExecutionException("coordinate not valid for fill: " + c);
+        }
         int i = index(c);
         if (!voxels.get(i)) {
             return false;
@@ -120,7 +131,12 @@ public class Matrix {
     }
 
     private void ground(Coordinate c) {
-        while (isValid(c) && isFull(c) && !isGrounded(c)) {
+        while (isValidForFill(c)) {
+            int index = index(c);
+            if (!voxels.get(index))
+                break;
+            if (grounded.get(index))
+                break;
             grounded.set(index(c));
             if (c.getY() > 0) {
                 ground(c.below());
@@ -149,7 +165,7 @@ public class Matrix {
 
 
     public boolean isGrounded(Coordinate c) {
-        return isValid(c) && grounded.get(index(c));
+        return isValidForFill(c) && grounded.get(index(c));
     }
 
     public int numFilled() {
@@ -160,10 +176,18 @@ public class Matrix {
         return grounded.cardinality() == voxels.cardinality();
     }
 
+    /**
+     * Is this coordinate valid wrt resolution?
+     */
     public boolean isValid(Coordinate c) {
-        return c.getX() >= 0 && c.getX() < resolution
-                && c.getY() >= 0 && c.getY() < resolution
-                && c.getZ() >= 0 && c.getZ() < resolution;
+        return c.isValid(resolution);
+    }
+
+    /**
+     * Is this coordinate valid for fill wrt resolution?
+     */
+    public boolean isValidForFill(Coordinate c) {
+        return c.isValidForFill(resolution);
     }
 
     /**
@@ -179,9 +203,9 @@ public class Matrix {
     public Region getBoundingBox() {
         int xmin = resolution, ymin = resolution, zmin = resolution;
         int xmax = 0, ymax = 0, zmax = 0;
-        for (int x = 0; x < resolution; x++) {
+        for (int x = 1; x < resolution - 1; x++) {
             for (int y = 0; y < resolution - 1; y++) {
-                for (int z = 0; z < resolution; z++) {
+                for (int z = 1; z < resolution - 1; z++) {
                     if (isFull(x, y, z)) {
                         xmin = Math.min(xmin, x);
                         ymin = Math.min(ymin, y);
@@ -193,6 +217,9 @@ public class Matrix {
                 }
 
             }
+        }
+        if (xmax == 0) {
+            return null;
         }
         return Region.of(Coordinate.of(xmin, ymin, zmin), Coordinate.of(xmax, ymax, zmax));
     }
@@ -224,7 +251,7 @@ public class Matrix {
         for (int x = minX; x <= maxX; x++) {
             for (int y = 0; y < resolution; y++) {
                 for (int z = 0; z < resolution; z++) {
-                    if (isFull(x, y, z)) matrix.fill(Coordinate.of(x - minX, y, z));
+                    if (isFull(x, y, z)) matrix.fillUnsafe(Coordinate.of(x - minX, y, z));
                 }
             }
         }
