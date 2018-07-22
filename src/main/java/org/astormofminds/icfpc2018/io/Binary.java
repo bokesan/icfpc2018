@@ -28,27 +28,27 @@ public class Binary {
     }
 
     public static List<Command> readTrace(InputStream in) throws IOException {
-        List<Command> trace = new ArrayList<>();
+        List<Command> trace = new ArrayList<>(10000);
         for (;;) {
             int b = in.read();
             if (b < 0) {
                 break;
             }
-            Command command;
+            Command cmd;
 
             if (b == 0b11111111) {
-                command = Command.HALT;
+                cmd = Command.HALT;
             }
             else if (b == 0b11111110) {
-                command = Command.WAIT;
+                cmd = Command.WAIT;
             }
             else if (b == 0b11111101) {
-                command = Command.FLIP;
+                cmd = Command.FLIP;
             }
             else if ((b & 0b11001111) == 0b00000100) {
                 int axis = (b & 0b110000) >>> 4;
                 int b2 = in.read();
-                command = Command.sMove(decodeLld(axis, b2));
+                cmd = Command.sMove(decodeLld(axis, b2));
             }
             else if ((b & 0b1111) == 0b1100) {
                 int axis1 = (b & 0b110000) >>> 4;
@@ -56,27 +56,23 @@ public class Binary {
                 int b2 = in.read();
                 Difference sld1 = decodeSld(axis1, b2 & 0b1111);
                 Difference sld2 = decodeSld(axis2, b2 >>> 4);
-                command = Command.lMove(sld1, sld2);
-            }
-            else if ((b & 0b111) == 0b111) {
-                command = Command.fusionP(decodeNd(b >>> 3));
-            }
-            else if ((b & 0b111) == 0b110) {
-                command = Command.fusionS(decodeNd(b >>> 3));
-            }
-            else if ((b & 0b111) == 0b101) {
-                Difference nd = decodeNd(b >>> 3);
-                int b2 = in.read();
-                command = Command.fission(nd, b2);
-            }
-            else if ((b & 0b111) == 0b011) {
-                Difference nd = decodeNd(b >>> 3);
-                command = Command.fill(nd);
+                cmd = Command.lMove(sld1, sld2);
             }
             else {
-                throw new IOException("invalid command encoding: " + Integer.toBinaryString(b));
+                Difference nd = decodeNd(b >>> 3);
+                switch (b & 0b111) {
+                    case 0b000: cmd = Command.gVoid(nd, readFarDistance(in)); break;
+                    case 0b001: cmd = Command.gFill(nd, readFarDistance(in)); break;
+                    case 0b010: cmd = Command.void_(nd); break;
+                    case 0b011: cmd = Command.fill(nd); break;
+                    case 0b101: cmd = Command.fission(nd, in.read()); break;
+                    case 0b110: cmd = Command.fusionS(nd); break;
+                    case 0b111: cmd = Command.fusionP(nd); break;
+                    default:
+                        throw new IOException("invalid command encoding: " + Integer.toBinaryString(b));
+                }
             }
-            trace.add(command);
+            trace.add(cmd);
         }
         return trace;
     }
@@ -105,7 +101,6 @@ public class Binary {
         return Difference.of(dx, dy, dz);
     }
 
-
     private static Difference decodeSld(int axis, int i) throws IOException {
         return decodeDifference(axis, i - 5);
     }
@@ -122,6 +117,13 @@ public class Binary {
             default:
                 throw new IOException("invalid axis: " + axis);
         }
+    }
+
+    private static Difference readFarDistance(InputStream in) throws IOException {
+        int dx = in.read() - 30;
+        int dy = in.read() - 30;
+        int dz = in.read() - 30;
+        return Difference.of(dx, dy, dz);
     }
 
 }

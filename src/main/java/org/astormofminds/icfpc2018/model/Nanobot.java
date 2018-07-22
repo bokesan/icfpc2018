@@ -16,9 +16,12 @@ public class Nanobot implements Comparable<Nanobot> {
         this.seeds = new TreeSet<>();
     }
 
+    /**
+     * Initial bot for main division.
+     */
     public static Nanobot initial() {
         Nanobot bot = new Nanobot(1);
-        for (int seed = 2; seed <= 20; seed++) {
+        for (int seed = 2; seed <= 40; seed++) {
             bot.seeds.add(seed);
         }
         return bot;

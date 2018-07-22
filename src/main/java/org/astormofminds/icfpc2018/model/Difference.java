@@ -91,6 +91,11 @@ public class Difference {
         return 0 < m && m <= 2 && clen() == 1;
     }
 
+    public boolean isFar() {
+        int c = clen();
+        return c > 0 && c <= 30;
+    }
+
     @Override
     public String toString() {
         return "<" + dx + ", " + dy + ", " + dz + ">";

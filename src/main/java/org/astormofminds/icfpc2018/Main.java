@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -60,7 +63,7 @@ public class Main {
     private static void solve(String modelFile, String traceFile, String solverName) throws IOException {
         Solver solver = SolverFactory.byName(solverName);
         Matrix model = Binary.readModel(new FileInputStream(modelFile));
-        solver.init(model);
+        solver.initAssemble(model);
         List<Command> trace = solver.getCompleteTrace();
         Binary.writeTrace(traceFile, trace);
     }
@@ -107,7 +110,7 @@ public class Main {
                 String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                 for (String solverName : solverNames) {
                     Solver solver = SolverFactory.byName(solverName);
-                    solver.init(model);
+                    solver.initAssemble(model);
                     List<Command> trace = solver.getCompleteTrace();
                     State ownResult = execute(model, trace);
                     if (ownResult == null) {
@@ -182,6 +185,13 @@ public class Main {
                     System.out.format("%5d: %s%n", i, trace.get(i));
                 }
             }
+            System.out.format("Total number of commands: %d%n", n);
+            trace.stream()
+                 .collect(Collectors.groupingBy(Command::getOp, Collectors.counting()))
+                 .entrySet()
+                 .stream()
+                 .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                 .forEach(e -> System.out.format("%10d %s%n", e.getValue(), e.getKey()));
         }
     }
 
