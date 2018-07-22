@@ -47,10 +47,10 @@ public class Main {
                 solve(args[1], args[2], args[3]);
                 break;
             case "solveAll":
-                if (args.length != 4) {
+                if (args.length != 5) {
                     usage(1);
                 }
-                solveAll(args[1], args[2], args[3].split(","));
+                solveAll(args[1], args[2], args[3], args[4].split(","));
                 break;
             default:
                 usage(1);
@@ -65,11 +65,10 @@ public class Main {
         Binary.writeTrace(traceFile, trace);
     }
 
-    private static void solveAll(String targetFolder, String traceFolder, String[] solverNames) throws IOException {
+    private static void solveAll(String problemFolder, String problemPrefix, String traceFolder, String[] solverNames) throws IOException {
         long startTime = System.nanoTime();
-        File targetDir = new File(targetFolder);
-        File[] targets = targetDir.listFiles((dir, name) -> name.endsWith("_tgt.mdl"));
-        Arrays.sort(targets);
+        File targetDir = new File(problemFolder);
+        File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
         List<File> targetFiles = Arrays.asList(targets);
         System.out.print("ID;R;default");
         for (String solver : solverNames) {
@@ -123,7 +122,7 @@ public class Main {
                     }
                 }
                 if (bestTrace != null) {
-                    Binary.writeTrace(id + ".nbt", bestTrace);
+                    Binary.writeTrace("out/" + id + ".nbt", bestTrace);
                 }
                 r += ";" + bestSolver + ";" + bestEnergy;
                 return r;
@@ -133,9 +132,10 @@ public class Main {
 
     private static void usage(int exitCode) {
         System.out.println("usage:");
-        System.out.println("  asof help                  show this help text");
-        System.out.println("  asof check <file>          decode file and show content");
-        System.out.println("  asof exec <model> <trace>  execute trace on model");
+        System.out.println("  help                  show this help text");
+        System.out.println("  check <file>          decode file and show content");
+        System.out.println("  exec <model> <trace>  execute trace on model");
+        System.out.println("  checkAll <problemsFolder> <prefix> <tracesFolder> solver1,solver2,...  run all solvers on all problems strating with prefix");
         System.exit(exitCode);
     }
 
