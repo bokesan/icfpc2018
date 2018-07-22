@@ -12,9 +12,19 @@ public class TwinSolver implements Solver {
     private Matrix target;
 
     @Override
-    public boolean init(Matrix matrix) {
+    public boolean initAssemble(Matrix matrix) {
         this.target = matrix;
         return true;
+    }
+
+    @Override
+    public boolean initDeconstruct(Matrix matrix) {
+        return false;
+    }
+
+    @Override
+    public boolean initReconstruct(Matrix source, Matrix target) {
+        return false;
     }
 
     @Override
@@ -36,10 +46,10 @@ public class TwinSolver implements Solver {
         }
         //let both bots solve their half
         LHMultiFiller leftSolver = new LHMultiFiller();
-        leftSolver.init(leftMatrix);
+        leftSolver.initAssemble(leftMatrix);
         List<Command> leftCommands = leftSolver.getCompleteTrace();
         LHMultiFiller rightSolver = new LHMultiFiller();
-        rightSolver.init(rightMatrix);
+        rightSolver.initAssemble(rightMatrix);
         List<Command> rightCommands = rightSolver.getCompleteTrace();
         //merge commands, making sure flips get replaced by wait where necessary
         boolean leftHigh = false;

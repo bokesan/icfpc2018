@@ -18,12 +18,22 @@ public class LayerSolver implements Solver {
     private Coordinate pos;
 
     @Override
-    public boolean init(Matrix matrix) {
+    public boolean initAssemble(Matrix matrix) {
         this.target = matrix;
         this.trace.clear();
         this.state = new Matrix(target.getResolution());
         this.pos = Coordinate.ORIGIN;
         return true;
+    }
+
+    @Override
+    public boolean initDeconstruct(Matrix matrix) {
+        return false;
+    }
+
+    @Override
+    public boolean initReconstruct(Matrix source, Matrix target) {
+        return false;
     }
 
     @Override

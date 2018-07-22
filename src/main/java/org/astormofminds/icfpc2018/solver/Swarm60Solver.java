@@ -21,9 +21,19 @@ public class Swarm60Solver implements Solver {
     private Set<Coordinate> floating;
 
     @Override
-    public boolean init(Matrix matrix) {
+    public boolean initAssemble(Matrix matrix) {
         this.targetMatrix = matrix;
         return true;
+    }
+
+    @Override
+    public boolean initDeconstruct(Matrix matrix) {
+        return false;
+    }
+
+    @Override
+    public boolean initReconstruct(Matrix source, Matrix target) {
+        return false;
     }
 
     @Override

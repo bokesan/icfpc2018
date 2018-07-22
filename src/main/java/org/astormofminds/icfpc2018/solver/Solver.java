@@ -7,7 +7,11 @@ import java.util.List;
 
 public interface Solver {
 
-    boolean init(Matrix matrix);
+    boolean initAssemble(Matrix matrix);
+
+    boolean initDeconstruct(Matrix matrix);
+
+    boolean initReconstruct(Matrix source, Matrix target);
 
     List<Command> getCompleteTrace();
 }
