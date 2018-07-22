@@ -1,4 +1,4 @@
-package org.astormofminds.icfpc2018.solver.chris;
+package org.astormofminds.icfpc2018.solver.old;
 
 import org.astormofminds.icfpc2018.model.*;
 import org.astormofminds.icfpc2018.solver.Solver;
