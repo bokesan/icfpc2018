@@ -248,7 +248,7 @@ public class Matrix {
 
     public Matrix getHalf(int minX, int maxX) {
         Matrix matrix = new Matrix(resolution);
-        for (int x = minX; x <= maxX; x++) {
+        for (int x = minX + 1; x <= maxX; x++) {
             for (int y = 0; y < resolution; y++) {
                 for (int z = 0; z < resolution; z++) {
                     if (isFull(x, y, z)) matrix.fillUnsafe(Coordinate.of(x - minX, y, z));
