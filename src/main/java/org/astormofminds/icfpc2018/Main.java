@@ -41,10 +41,11 @@ public class Main {
                 exec(args[1], args[2]);
                 break;
             case "solve":
-                if (args.length != 4) {
+                if (args.length < 4 || args.length > 5) {
                     usage(1);
                 }
-                solve(args[1], args[2], args[3]);
+                if (args.length == 4) solve(args[1], args[2], args[3]);
+                if (args.length == 5) solve(args[1], args[2], args[3], args[4]);
                 break;
             case "solveAll":
                 if (args.length != 5) {
@@ -67,6 +68,15 @@ public class Main {
         } else {
             throw new UnsupportedOperationException("Cannot process model " + modelFile);
         }
+        List<Command> trace = solver.getCompleteTrace();
+        Binary.writeTrace(traceFile, trace);
+    }
+
+    private static void solve(String sourceModelFile, String targetModelFile, String traceFile, String solverName) throws IOException {
+        Solver solver = SolverFactory.byName(solverName);
+        Matrix sourceModel = Binary.readModel(new FileInputStream(sourceModelFile));
+        Matrix targetModel = Binary.readModel(new FileInputStream(targetModelFile));
+        solver.initReconstruct(sourceModel, targetModel);
         List<Command> trace = solver.getCompleteTrace();
         Binary.writeTrace(traceFile, trace);
     }
