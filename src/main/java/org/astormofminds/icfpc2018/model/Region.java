@@ -34,5 +34,14 @@ public class Region {
         return c2;
     }
 
+    public boolean contains(Coordinate c) {
+        return Math.min(c1.getX(), c2.getX()) <= c.getX()
+                && c.getX() <= Math.max(c1.getX(), c2.getX())
+                && Math.min(c1.getY(), c2.getY()) <= c.getY()
+                && c.getY() <= Math.max(c1.getY(), c2.getY())
+                && Math.min(c1.getZ(), c2.getZ()) <= c.getZ()
+                && c.getZ() <= Math.max(c1.getZ(), c2.getZ());
+    }
+
     // TODO: equals and hashCode
 }
