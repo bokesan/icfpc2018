@@ -1,6 +1,7 @@
-package org.astormofminds.icfpc2018.solver;
+package org.astormofminds.icfpc2018.solver.old;
 
 import org.astormofminds.icfpc2018.model.Command;
+import org.astormofminds.icfpc2018.solver.Optimizer;
 
 import java.util.List;
 

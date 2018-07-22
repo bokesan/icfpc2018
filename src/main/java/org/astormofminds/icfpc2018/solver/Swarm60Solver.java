@@ -1,6 +1,7 @@
 package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,7 +56,7 @@ public class Swarm60Solver implements Solver {
         int zmax = box.getMaxZ();
 
         //lets start by only caring about those where we can get away with one long line of bots
-        if (xmax - xmin > 60) {
+        if (xmax - xmin > 120) {
             result.add(Command.HALT);
             return result;
         }
@@ -79,9 +80,9 @@ public class Swarm60Solver implements Solver {
         floating = new HashSet<>();
 
         //spawn bots
-        int numBotsToSpawn = (xmax - xmin) / 3;
+        int numBotsToSpawn = (xmax - xmin + 1) / 3;
         //if we cover it perfectly, we subtract on for the existing bot
-        if ((xmax - xmin) % 3 == 0) numBotsToSpawn--;
+        if ((xmax - xmin + 1) % 3 == 0) numBotsToSpawn--;
         if (numBotsToSpawn > 39) {
             result.add(Command.HALT);
             return result;
@@ -93,7 +94,7 @@ public class Swarm60Solver implements Solver {
                 addWait();
             }
             //spawn a new one
-            result.add(Command.fission(Difference.of(1, 0, 0), 19 - i));
+            result.add(Command.fission(Difference.of(1, 0, 0), 39 - i));
 
             //let the left ones wait while the new one moves right
             for (int j = 0; j < i; j++) {
