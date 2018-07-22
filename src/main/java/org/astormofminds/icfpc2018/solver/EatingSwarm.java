@@ -43,11 +43,11 @@ public class EatingSwarm implements Solver {
         }
 
         Region box = currentMatrix.getBoundingBox();
-        int xmin = Math.min(box.getC1().getX(), box.getC2().getX());
-        int zmin = Math.min(box.getC1().getZ(), box.getC2().getZ());
-        int xmax = Math.max(box.getC1().getX(), box.getC2().getX());
-        int ymax = Math.max(box.getC1().getY(), box.getC2().getY());
-        int zmax = Math.max(box.getC1().getZ(), box.getC2().getZ());
+        int xmin = box.getMinX();
+        int zmin = box.getMinZ();
+        int xmax = box.getMaxX();
+        int ymax = box.getMaxY();
+        int zmax = box.getMaxZ();
 
         //lets start by only caring about those where we can get away with one long line of bots
         if (xmax - xmin > 120) {
