@@ -75,7 +75,7 @@ public class Main {
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
-        System.out.println(";best");
+        System.out.println(";bestSolver;bestEnergy");
         targetFiles.parallelStream()
                 .map(t -> {
                     try {
@@ -125,7 +125,7 @@ public class Main {
                 if (bestTrace != null) {
                     Binary.writeTrace(id + ".nbt", bestTrace);
                 }
-                r += ";" + bestSolver;
+                r += ";" + bestSolver + ";" + bestEnergy;
                 return r;
             }
         }
