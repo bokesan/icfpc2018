@@ -2,6 +2,7 @@
 ops/privateID
 out/
 test*.bat
+test*.sh
 
 # Compiled class file
 *.class

@@ -19,8 +19,8 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final boolean parallel = true;
-    private static final boolean testDefaultTrace = false;
+    private static final boolean PARALLEL = false;
+    private static final boolean TEST_DEFAULT_TRACE = false;
     private static final boolean STOP_ON_ERROR = true;
 
     public static void main(String[] args) throws IOException {
@@ -78,16 +78,19 @@ public class Main {
         long startTime = System.nanoTime();
         File targetDir = new File(problemFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
-        if (!parallel) {
+        if (!PARALLEL) {
             Arrays.sort(targets);
         }
-        System.out.print("ID;R;default");
+        System.out.print("ID;R");
+        if (TEST_DEFAULT_TRACE) {
+            System.out.print(";default");
+        }
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
         System.out.println(";bestSolver;bestEnergy");
         Stream<File> fileStream = Arrays.stream(targets);
-        if (parallel) {
+        if (PARALLEL) {
             fileStream = fileStream.parallel();
         }
         fileStream.map(t -> {
@@ -127,44 +130,59 @@ public class Main {
              InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
         ) {
             Matrix model = Binary.readModel(in);
-            if (testDefaultTrace) {
+            long bestEnergy = Long.MAX_VALUE;
+            String bestSolver = "-";
+            if (TEST_DEFAULT_TRACE) {
                 List<Command> defaultTrace = Binary.readTrace(tin);
                 State dfltResult = execute(id, "default", mode, model, defaultTrace);
                 if (dfltResult == null) {
                     return id + ": invalid default trace";
                 }
+                bestEnergy = dfltResult.getEnergy();
+                bestSolver = "default";
             }
-            long bestEnergy = Long.MAX_VALUE;
-            String bestSolver = "-";
             List<Command> bestTrace = null;
-            String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
+            String r = String.format("%s;%d", id, model.getResolution());
+            if (TEST_DEFAULT_TRACE) {
+                r += String.format(";%d", bestEnergy);
+            }
             for (String solverName : solverNames) {
                 long startTime = System.nanoTime();
                 Solver solver = SolverFactory.byName(solverName);
+                List<Command> trace = null;
                 switch (mode) {
                     case ASSEMBLE:
-                        solver.initAssemble(new Matrix(model));
+                        if (solver.initAssemble(new Matrix(model))) {
+                            trace = solver.getCompleteTrace();
+                        }
                         break;
                     case DESTRUCT:
-                        solver.initDeconstruct(new Matrix(model));
+                        if (solver.initDeconstruct(new Matrix(model))) {
+                            trace = solver.getCompleteTrace();
+                        }
                         break;
                     default:
                         throw new AssertionError("not implemented");
                 }
-                List<Command> trace = solver.getCompleteTrace();
-                long elapsed = System.nanoTime() - startTime;
-                logger.info("generate trace for {} with solver '{}': {}s", id, solverName,
-                        String.format("%.3f", elapsed / 1.0e9));
-                State ownResult = execute(id, solverName, mode, model, trace);
-                if (ownResult == null) {
+                State result;
+                if (trace == null) {
+                    result = null;
+                    logger.error("generating trace failed for {} with solver: {}", id, solverName);
+                } else {
+                    long elapsed = System.nanoTime() - startTime;
+                    logger.info("generate trace for {} with solver {}: {}s", id, solverName,
+                            String.format("%.3f", elapsed / 1.0e9));
+                    result = execute(id, solverName, mode, model, trace);
+                }
+                if (result == null) {
                     if (STOP_ON_ERROR) {
                         System.exit(1);
                     }
                     r += ";invalid";
                 } else {
-                    r += String.format(";%d", ownResult.getEnergy());
-                    if (ownResult.getEnergy() < bestEnergy) {
-                        bestEnergy = ownResult.getEnergy();
+                    r += String.format(";%d", result.getEnergy());
+                    if (result.getEnergy() < bestEnergy) {
+                        bestEnergy = result.getEnergy();
                         bestSolver = solverName;
                         bestTrace = trace;
                     }
