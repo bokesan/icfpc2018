@@ -2,12 +2,16 @@ package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.*;
 import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedException;
+import org.astormofminds.icfpc2018.solver.exceptions.WrongNumberOfBotsException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class EatingSwarm implements Solver {
+public class Surround2 implements Solver {
 
+    private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
     protected List<Command> result;
     private int posx = 0;
@@ -15,17 +19,18 @@ public class EatingSwarm implements Solver {
     private int posz = 0;
     private boolean harmonicHigh;
     private boolean switchOff;
-    private boolean hasEaten = false;
+    private Set<Coordinate> fresh;
+    private Set<Coordinate> floating;
 
     @Override
     public boolean initAssemble(Matrix matrix) {
-        return false;
+        this.targetMatrix = matrix;
+        return true;
     }
 
     @Override
     public boolean initDeconstruct(Matrix matrix) {
-        currentMatrix = matrix;
-        return true;
+        return false;
     }
 
     @Override
@@ -35,16 +40,17 @@ public class EatingSwarm implements Solver {
 
     @Override
     public List<Command> getCompleteTrace() {
-        if (currentMatrix == null) throw new SolverNotInitializedException();
-        int resolution = currentMatrix.getResolution();
+        if (targetMatrix == null) throw new SolverNotInitializedException();
+        int resolution = targetMatrix.getResolution();
         result = new ArrayList<>(2 * resolution * resolution * resolution);
         if (resolution < 3) {
             result.add(Command.HALT);
             return result;
         }
 
-        Region box = currentMatrix.getBoundingBox();
+        Region box = targetMatrix.getBoundingBox();
         int xmin = box.getMinX();
+        int ymin = box.getMinY();
         int zmin = box.getMinZ();
         int xmax = box.getMaxX();
         int ymax = box.getMaxY();
@@ -62,9 +68,9 @@ public class EatingSwarm implements Solver {
             result.add(Command.sMove(Difference.of(steps, 0, 0)));
             posx += steps;
         }
-        //move one lower up, because we eat from the inside
-        while (posy < ymax - 1) {
-            int steps = Math.min(ymax - 1 - posy, 15);
+        //move one higher up, because we build from over the voxel
+        while (posy <= ymin) {
+            int steps = Math.min(ymin + 1 - posy, 15);
             result.add(Command.sMove(Difference.of(0, steps, 0)));
             posy += steps;
         }
@@ -74,8 +80,11 @@ public class EatingSwarm implements Solver {
             posz += steps;
         }
 
+        currentMatrix = new Matrix(targetMatrix.getResolution());
         harmonicHigh = false;
         switchOff = false;
+        fresh = new HashSet<>();
+        floating = new HashSet<>();
 
         //spawn bots
         int numBotsToSpawn = (xmax - xmin + 1) / 3;
@@ -103,36 +112,53 @@ public class EatingSwarm implements Solver {
         }
         int numBots = numBotsToSpawn + 1;
 
-        //eat all layers starting by going in far direction
+        //print all layers
         boolean moveAway = true;
-        for (int y = ymax - 1; y >= -1; y -= 3) {
-            if (y == -1) y = 0;
+        for (int y = ymin + 1; y < ymax + 2; y += 3) {
+            int issuedCommands = result.size();
             if (moveAway) {
                 for (int z = zmin -1; z <= zmax + 1; z++) {
-                    eatAll(numBots, 1);
+                    allFill(numBots, -1);
                     //move one away, unless it is the last run through
                     if (z < zmax + 1) {
                         moveFar(numBots);
                     }
                 }
+                // move one up, unless it is the last run through
+                if (y < ymax - 1) {
+                    moveUp(numBots, 3);
+                }
             } else {
+                // move from far to near on even layers
                 for (int z = zmax + 1; z >= zmin - 1; z--) {
-                    eatAll(numBots, -1);
+                    allFill(numBots, 1);
                     //move one here, unless it is the last run through
                     if (z > zmin - 1) {
                         moveNear(numBots);
                     }
                 }
+                // move 3 up, unless it is the last run through
+                if (y < ymax - 1) {
+                    moveUp(numBots, 3);
+                }
             }
-            // move 3 down, unless fast run or ground too near
-            if (y > 2) {
-                moveDown(numBots, 3);
-            } else if (y == 2) {
-                moveDown(numBots, 2);
+            if (switchOff) {
+                switchOff = false;
+                harmonicHigh = false;
+                result.add(Command.FLIP);
+                for (int i = 1; i < numBots; i++) {
+                    result.add(Command.WAIT);
+                }
             }
-            //change direction
             moveAway = !moveAway;
-            //if we can swith off high harmonic and have not yet, do it now
+            //optimize moves
+            if ((result.size() - issuedCommands) % numBots != 0) {
+                //something was messed up, there should be an equal number of commands for each bot
+                throw new WrongNumberOfBotsException();
+            }
+            int steps = (result.size() - issuedCommands) / numBots;
+            Optimizer.optimizeBotMoves(steps, numBots, result);
+            //if we can switch off high harmonic and have not yet, do it now
             if (switchOff) {
                 switchOff = false;
                 harmonicHigh = false;
@@ -162,20 +188,20 @@ public class EatingSwarm implements Solver {
         }
 
         //return home
-        while (posx > 0) {
-            int steps = Math.min(15, posx);
-            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
-            posx -= steps;
-        }
         while (posz > 0) {
             int steps = Math.min(15, posz);
             result.add(Command.sMove(Difference.of(0, 0, -steps)));
             posz -= steps;
-        }
+        };
         while (posy > 0) {
             int steps = Math.min(15, posy);
             result.add(Command.sMove(Difference.of(0, -steps, 0)));
             posy -= steps;
+        }
+        while (posx > 0) {
+            int steps = Math.min(15, posx);
+            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
+            posx -= steps;
         }
         //end finally, stop
         result.add(Command.HALT);
@@ -193,73 +219,76 @@ public class EatingSwarm implements Solver {
         }
     }
 
-    private void eatAll(int numBots, int zEat) {
+    private void allFill(int numBots, int zFill) {
+        int extraSteps = 0;
+        //fill fields below
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x - 1, posy - 1, posz, -1, -1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x, posy - 1, posz, 0, -1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x + 1, posy - 1, posz, 1, -1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+
+        //fill fields same level
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x - 1, posy, posz, -1, 0, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x, posy, posz + zFill, 0, 0, zFill);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x + 1, posy, posz, 1, 0, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+
         //fields above
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            voidIfRequired(x - 1, posy + 1, posz, -1, 1, 0);
+            fillIfRequired(x - 1, posy + 1, posz, -1, 1, 0);
         }
-        checkHarmonic(numBots);
+        extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            voidIfRequired(x, posy + 1, posz, 0, 1, 0);
+            fillIfRequired(x, posy + 1, posz, 0, 1, 0);
         }
-        checkHarmonic(numBots);
+        extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            voidIfRequired(x + 1, posy + 1, posz, 1, 1, 0);
+            fillIfRequired(x + 1, posy + 1, posz, 1, 1, 0);
         }
-        checkHarmonic(numBots);
+        extraSteps += checkHarmonic(numBots);
 
-        //eat fields before us
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x - 1, posy, posz, -1, 0, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x, posy + 1, posz + zEat, 0, 1, zEat);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x, posy, posz + zEat, 0, 0, zEat);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x, posy - 1, posz + zEat, 0, -1, zEat);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x + 1, posy, posz, 1, 0, 0);
-        }
-        checkHarmonic(numBots);
-
-        //eat fields below
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x - 1, posy - 1, posz, -1, -1, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x, posy - 1, posz, 0, -1, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            voidIfRequired(x + 1, posy - 1, posz, 1, -1, 0);
-        }
-        checkHarmonic(numBots);
+        //optimize waits
+        Optimizer.optimizeBotWaits(9 + extraSteps, numBots, result);
     }
 
-    private void checkHarmonic(int numbots) {
-        if (!hasEaten) return;
+    private int checkHarmonic(int numbots) {
+        Set<Coordinate> floats = new HashSet<>();
+        for (Coordinate c : fresh) {
+            if (!currentMatrix.isGrounded(c)) floats.add(c);
+        }
+        for (Coordinate c : floating) {
+            if (!currentMatrix.isGrounded(c)) floats.add(c);
+        }
+        floating.clear();
+        fresh.clear();
+        floating.addAll(floats);
 
-        if (currentMatrix.allGrounded()) {
+        if (floating.isEmpty()) {
             if (harmonicHigh) switchOff = true;
         } else {
             switchOff = false;
@@ -270,7 +299,7 @@ public class EatingSwarm implements Solver {
                     if (result.get(i).equals(Command.WAIT)) {
                         result.remove(i);
                         result.add(i, Command.FLIP);
-                        return;
+                        return 1;
                     }
                 }
                 // nothing found to replace - we inject a waiting + flipping round before the current tick
@@ -279,33 +308,35 @@ public class EatingSwarm implements Solver {
                     result.add(index, Command.WAIT);
                 }
                 result.add(index, Command.FLIP);
+                return 1;
             }
         }
+        return 0;
     }
 
-    private void voidIfRequired(int x, int y, int z, int divx, int divy, int divz) {
+    private void fillIfRequired(int x, int y, int z, int divx, int divy, int divz) {
         if (!(x >= 0 && y >= 0 && z >= 0 &&
-                x < currentMatrix.getResolution() &&
-                y < currentMatrix.getResolution() &&
-                z < currentMatrix.getResolution())) {
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
             addWait();
             return;
         }
-        Coordinate toEat = Coordinate.of(x, y , z);
-        if (currentMatrix.get(toEat) == VoxelState.FULL) {
-            currentMatrix.unfill(toEat);
-            result.add(Command.void_(Difference.of(divx, divy, divz)));
-            hasEaten = true;
+        Coordinate toFill = Coordinate.of(x, y , z);
+        if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
+            currentMatrix.fill(toFill);
+            fresh.add(toFill);
+            result.add(Command.fill(Difference.of(divx, divy, divz)));
         } else {
             addWait();
         }
     }
 
-    private void moveDown(int numbots, int steps) {
+    private void moveUp(int numbots, int steps) {
         for (int i = 0; i < numbots; i++) {
-            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            result.add(Command.sMove(Difference.of(0, steps, 0)));
         }
-        posy-=steps;
+        posy+=steps;
     }
 
     private void moveFar(int numbots) {

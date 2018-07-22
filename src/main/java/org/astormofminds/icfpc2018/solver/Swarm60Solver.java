@@ -155,9 +155,9 @@ public class Swarm60Solver implements Solver {
         }
 
         //return home
+        while (posx > 0) moveLeft();
         while (posz > 0) moveNear(1);
         while (posy > 0) moveDown(1);
-        while (posx > 0) moveLeft();
         //end finally, stop
         result.add(Command.HALT);
 

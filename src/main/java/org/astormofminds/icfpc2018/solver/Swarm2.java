@@ -167,9 +167,21 @@ public class Swarm2 implements Solver {
         }
 
         //return home
-        while (posz > 0) moveNear(1);
-        while (posy > 0) moveDown(1);
-        while (posx > 0) moveLeft();
+        while (posx > 0) {
+            int steps = Math.min(15, posx);
+            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
+            posx -= steps;
+        }
+        while (posz > 0) {
+            int steps = Math.min(15, posz);
+            result.add(Command.sMove(Difference.of(0, 0, -steps)));
+            posz -= steps;
+        };
+        while (posy > 0) {
+            int steps = Math.min(15, posy);
+            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            posy -= steps;
+        }
         //end finally, stop
         result.add(Command.HALT);
 
