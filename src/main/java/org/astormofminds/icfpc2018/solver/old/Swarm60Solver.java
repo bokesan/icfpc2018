@@ -1,6 +1,7 @@
-package org.astormofminds.icfpc2018.solver;
+package org.astormofminds.icfpc2018.solver.old;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.solver.Solver;
 import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedException;
 
 import java.util.ArrayList;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class SurroundSwarmSolver implements Solver {
+class Swarm60Solver implements Solver {
 
     private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
@@ -66,21 +67,15 @@ class SurroundSwarmSolver implements Solver {
         }
 
         //move to starting point and one further right - we cover more ground
-        while (posx < xmin + 1) {
-            int steps = Math.min(xmin + 1 - posx, 15);
-            result.add(Command.sMove(Difference.of(steps, 0, 0)));
-            posx += steps;
+        for (int x = 0; x <= xmin; x++) {
+            moveRight();
         }
         //move one higher up, because we build from over the voxel
-        while (posy <= ymin) {
-            int steps = Math.min(ymin + 1 - posy, 15);
-            result.add(Command.sMove(Difference.of(0, steps, 0)));
-            posy += steps;
+        for (int y = 0; y < ymin + 1; y++) {
+            moveUp(1);
         }
-        while (posz < zmin - 1) {
-            int steps = Math.min(zmin - 1 - posz, 15);
-            result.add(Command.sMove(Difference.of(0, 0, steps)));
-            posz += steps;
+        for (int z = 0; z < zmin; z++) {
+            moveFar(1);
         }
 
         currentMatrix = new Matrix(targetMatrix.getResolution());
@@ -116,43 +111,34 @@ class SurroundSwarmSolver implements Solver {
         int numBots = numBotsToSpawn + 1;
 
         //print all layers
-        boolean moveAway = true;
-        for (int y = ymin + 1; y < ymax + 2; y += 3) {
-            if (moveAway) {
-                for (int z = zmin -1; z <= zmax + 1; z++) {
-                    allFill(numBots, -1);
+        for (int y = ymin + 1; y < ymax + 2; y++) {
+            //on each layer, move from near to far on odd layers, omitting the last row
+            if ((y - ymin) % 2 == 1) {
+                for (int z = zmin; z <= zmax; z++) {
+                    allFillBelow(numBots);
                     //move one away, unless it is the last run through
-                    if (z < zmax + 1) {
+                    if (z < zmax) {
                         moveFar(numBots);
                     }
                 }
                 // move one up, unless it is the last run through
-                if (y < ymax - 1) {
-                    moveUp(numBots, 3);
+                if (y < ymax + 1) {
+                    moveUp(numBots);
                 }
             } else {
                 // move from far to near on even layers
-                for (int z = zmax + 1; z >= zmin - 1; z--) {
-                    allFill(numBots, 1);
+                for (int z = zmax; z >= zmin; z--) {
+                    allFillBelow(numBots);
                     //move one here, unless it is the last run through
-                    if (z > zmin - 1) {
+                    if (z > zmin) {
                         moveNear(numBots);
                     }
                 }
-                // move 3 up, unless it is the last run through
-                if (y < ymax - 1) {
-                    moveUp(numBots, 3);
+                // move one up, unless it is the last run through
+                if (y < ymax + 1) {
+                    moveUp(numBots);
                 }
             }
-            if (switchOff) {
-                switchOff = false;
-                harmonicHigh = false;
-                result.add(Command.FLIP);
-                for (int i = 1; i < numBots; i++) {
-                    result.add(Command.WAIT);
-                }
-            }
-            moveAway = !moveAway;
         }
 
         //merge all bots through fusion
@@ -174,21 +160,9 @@ class SurroundSwarmSolver implements Solver {
         }
 
         //return home
-        while (posx > 0) {
-            int steps = Math.min(15, posx);
-            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
-            posx -= steps;
-        }
-        while (posz > 0) {
-            int steps = Math.min(15, posz);
-            result.add(Command.sMove(Difference.of(0, 0, -steps)));
-            posz -= steps;
-        }
-        while (posy > 0) {
-            int steps = Math.min(15, posy);
-            result.add(Command.sMove(Difference.of(0, -steps, 0)));
-            posy -= steps;
-        }
+        while (posx > 0) moveLeft();
+        while (posz > 0) moveNear(1);
+        while (posy > 0) moveDown(1);
         //end finally, stop
         result.add(Command.HALT);
 
@@ -205,55 +179,20 @@ class SurroundSwarmSolver implements Solver {
         }
     }
 
-    private void allFill(int numBots, int zFill) {
-        //fill fields below
+    private void allFillBelow(int numBots) {
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x - 1, posy - 1, posz, -1, -1, 0);
+            fillIfRequiredLeft(x - 1, posy - 1, posz);
         }
         checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x, posy - 1, posz, 0, -1, 0);
+            fillIfRequiredCenter(x, posy - 1, posz);
         }
         checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            fillIfRequired(x + 1, posy - 1, posz, 1, -1, 0);
-        }
-        checkHarmonic(numBots);
-
-        //fill fields same level
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x - 1, posy, posz, -1, 0, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x, posy, posz + zFill, 0, 0, zFill);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x + 1, posy, posz, 1, 0, 0);
-        }
-        checkHarmonic(numBots);
-
-        //fields above
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x - 1, posy + 1, posz, -1, 1, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x, posy + 1, posz, 0, 1, 0);
-        }
-        checkHarmonic(numBots);
-        for (int i = 0; i < numBots; i++) {
-            int x = posx + i * 3;
-            fillIfRequired(x + 1, posy + 1, posz, 1, 1, 0);
+            fillIfRequiredRight(x + 1, posy - 1, posz);
         }
         checkHarmonic(numBots);
     }
@@ -289,7 +228,7 @@ class SurroundSwarmSolver implements Solver {
         }
     }
 
-    private void fillIfRequired(int x, int y, int z, int divx, int divy, int divz) {
+    private void fillIfRequiredLeft(int x, int y, int z) {
         if (!(x >= 0 && y >= 0 && z >= 0 &&
                 x < targetMatrix.getResolution() &&
                 y < targetMatrix.getResolution() &&
@@ -301,17 +240,60 @@ class SurroundSwarmSolver implements Solver {
         if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
             currentMatrix.fill(toFill);
             fresh.add(toFill);
-            result.add(Command.fill(Difference.of(divx, divy, divz)));
+            result.add(Command.fill(Difference.of(-1, -1, 0)));
         } else {
             addWait();
         }
     }
 
-    private void moveUp(int numbots, int steps) {
-        for (int i = 0; i < numbots; i++) {
-            result.add(Command.sMove(Difference.of(0, steps, 0)));
+    private void fillIfRequiredCenter(int x, int y, int z) {
+        if (!(x >= 0 && y >= 0 && z >= 0 &&
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
+            addWait();
+            return;
         }
-        posy+=steps;
+        Coordinate toFill = Coordinate.of(x, y , z);
+        if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
+            currentMatrix.fill(toFill);
+            fresh.add(toFill);
+            result.add(Command.fill(Difference.of(0, -1, 0)));
+        } else {
+            addWait();
+        }
+    }
+
+    private void fillIfRequiredRight(int x, int y, int z) {
+        if (!(x >= 0 && y >= 0 && z >= 0 &&
+                x < targetMatrix.getResolution() &&
+                y < targetMatrix.getResolution() &&
+                z < targetMatrix.getResolution())) {
+            addWait();
+            return;
+        }
+        Coordinate toFill = Coordinate.of(x, y , z);
+        if (targetMatrix.get(toFill) == VoxelState.FULL && currentMatrix.get(toFill) == VoxelState.VOID) {
+            currentMatrix.fill(toFill);
+            fresh.add(toFill);
+            result.add(Command.fill(Difference.of(1, -1, 0)));
+        } else {
+            addWait();
+        }
+    }
+
+    private void moveDown(int numbots) {
+        for (int i = 0; i < numbots; i++) {
+            result.add(Command.DOWN);
+        }
+        posy--;
+    }
+
+    private void moveUp(int numbots) {
+        for (int i = 0; i < numbots; i++) {
+            result.add(Command.UP);
+        }
+        posy++;
     }
 
     private void moveFar(int numbots) {
@@ -326,5 +308,15 @@ class SurroundSwarmSolver implements Solver {
             result.add(Command.NEAR);
         }
         posz--;
+    }
+
+    private void moveRight() {
+        result.add(Command.RIGHT);
+        posx++;
+    }
+
+    private void moveLeft() {
+        result.add(Command.LEFT);
+        posx--;
     }
 }

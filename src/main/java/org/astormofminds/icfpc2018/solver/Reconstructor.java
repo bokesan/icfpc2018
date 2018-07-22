@@ -229,12 +229,12 @@ class Reconstructor implements Solver {
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            flipIfRequired(x, posy - 1, posz - 1, 1, -1, -1, false);
+            flipIfRequired(x, posy - 1, posz - 1, 0, -1, -1, false);
         }
         extraSteps += checkHarmonic(numBots);
         for (int i = 0; i < numBots; i++) {
             int x = posx + i * 3;
-            flipIfRequired(x, posy - 1, posz + 1, 1, -1, 1, false);
+            flipIfRequired(x, posy - 1, posz + 1, 0, -1, 1, false);
         }
         extraSteps += checkHarmonic(numBots);
 
@@ -351,7 +351,7 @@ class Reconstructor implements Solver {
             //we have to delete
             currentMatrix.unfill(toCheck);
             result.add(Command.void_(Difference.of(divx, divy, divz)));
-        } else if (!currentMatrix.isFull(toCheck) && targetMatrix.isFull(toCheck)) {
+        } else if (!currentMatrix.isFull(toCheck) && !forceDelete && targetMatrix.isFull(toCheck)) {
             //we have to create
             currentMatrix.fill(toCheck);
             result.add(Command.fill(Difference.of(divx, divy, divz)));
