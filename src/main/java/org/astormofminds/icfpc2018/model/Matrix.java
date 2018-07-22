@@ -162,7 +162,7 @@ public class Matrix {
                 break;
             if (grounded.get(index))
                 break;
-            grounded.set(index(c));
+            grounded.set(index);
             if (c.getY() > 0) {
                 ground(c.below());
                 ground(c.before());
@@ -193,6 +193,7 @@ public class Matrix {
      */
     private void recomputeGrounded(Coordinate c) {
         grounded.clear();
+
         // set bottom
         for (int x = 1; x < resolution - 1; x++) {
             for (int z = 1; z < resolution - 1; z++) {
@@ -201,35 +202,37 @@ public class Matrix {
                     grounded.set(i);
             }
         }
-        // now ground all with direct support
+
+        // now ground upwards in a linear way
         for (int y = 1; y < resolution - 1; y++) {
             for (int x = 1; x < resolution - 1; x++) {
                 for (int z = 1; z < resolution - 1; z++) {
                     int i = index(x, y, z);
-                    if (voxels.get(i) && grounded.get(indexBelow(i))) {
+                    if (voxels.get(i)
+                        && (grounded.get(indexBelow(i))
+                            || grounded.get(indexLeft(i))
+                            || grounded.get(indexBefore(i))))
+                    {
                         grounded.set(i);
                     }
                 }
             }
         }
-        // and finally check still ungronded ones for groundedness
-        for (int y = resolution - 2; y >= 1; y--) {
-            for (int x = 1; x < resolution - 1; x++) {
-                for (int z = 1; z < resolution - 1; z++) {
-                    int i = index(x, y, z);
-                    if (voxels.get(i) && !grounded.get(i)
-                        && (grounded.get(indexAbove(i))
-                            || grounded.get(indexBelow(i))
-                            || grounded.get(indexLeft(i))
-                            || grounded.get(indexRight(i))
-                            || grounded.get(indexBefore(i))
-                            || grounded.get(indexBehind(i))))
-                    {
-                        ground(Coordinate.of(x, y, z));
-                    }
-                }
+
+        // and finally check still ungrounded ones for groundedness
+        BitSet clone = (BitSet) voxels.clone();
+        clone.andNot(grounded);
+        clone.stream().forEach(i -> {
+            if (grounded.get(indexAbove(i))
+                || grounded.get(indexBelow(i))
+                || grounded.get(indexLeft(i))
+                || grounded.get(indexRight(i))
+                || grounded.get(indexBefore(i))
+                || grounded.get(indexBehind(i)))
+            {
+                ground(toCoordinate(i));
             }
-        }
+        });
     }
 
     public boolean isGrounded(Coordinate c) {
