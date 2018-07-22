@@ -2,6 +2,6 @@
 
 java=java
 jvmopts="-Xss200m -Xms1g"
-# jvmopts="$jvmopts -Xprof -Dsomething with concurrent"
+# jvmopts="$jvmopts -Xprof"
 
 $java $jvmopts -jar build/libs/icfpc2018-0.0.1.jar $*

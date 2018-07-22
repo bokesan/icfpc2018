@@ -16,12 +16,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final String prog = "asof";
+    private static boolean parallel = true;
+    private static boolean testDefaultTrace = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -78,15 +80,19 @@ public class Main {
         long startTime = System.nanoTime();
         File targetDir = new File(problemFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
-        // Arrays.sort(targets);
-        List<File> targetFiles = Arrays.asList(targets);
+        if (!parallel) {
+            Arrays.sort(targets);
+        }
         System.out.print("ID;R;default");
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
         System.out.println(";bestSolver;bestEnergy");
-        targetFiles.parallelStream()
-                .map(t -> {
+        Stream<File> fileStream = Arrays.stream(targets);
+        if (parallel) {
+            fileStream = fileStream.parallel();
+        }
+        fileStream.map(t -> {
                     try {
                         return solveProblem(traceFolder, solverNames, t);
                     } catch (IOException e) {
@@ -123,50 +129,54 @@ public class Main {
              InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
         ) {
             Matrix model = Binary.readModel(in);
-            List<Command> defaultTrace = Binary.readTrace(tin);
-            State dfltResult = execute(id, "default", mode, model, defaultTrace);
-            if (dfltResult == null) {
-                return(id + ": invalid default trace.");
-            } else {
-                long bestEnergy = dfltResult.getEnergy();
-                String bestSolver = "default";
-                List<Command> bestTrace = null;
-                String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
-                for (String solverName : solverNames) {
-                    long startTime = System.nanoTime();
-                    Solver solver = SolverFactory.byName(solverName);
-                    switch (mode) {
-                        case ASSEMBLE:
-                            solver.initAssemble(new Matrix(model));
-                            break;
-                        case DESTRUCT:
-                            solver.initDeconstruct(new Matrix(model));
-                            break;
-                        default:
-                            throw new AssertionError("not implemented");
-                    }
-                    List<Command> trace = solver.getCompleteTrace();
-                    long elapsed = System.nanoTime() - startTime;
-                    logger.info("generate trace for {} with solver '{}': {}s", id, solverName,
-                            String.format("%.3f", elapsed / 1.0e9));
-                    State ownResult = execute(id, solverName, mode, model, trace);
-                    if (ownResult == null) {
-                        r += ";invalid";
-                    } else {
-                        r += String.format(";%d", ownResult.getEnergy());
-                        if (ownResult.getEnergy() < bestEnergy) {
-                            bestEnergy = ownResult.getEnergy();
-                            bestSolver = solverName;
-                            bestTrace = trace;
-                        }
-                    }
+            if (testDefaultTrace) {
+                List<Command> defaultTrace = Binary.readTrace(tin);
+                State dfltResult = execute(id, "default", mode, model, defaultTrace);
+                if (dfltResult == null) {
+                    return id + ": invalid default trace";
                 }
-                if (bestTrace != null) {
-                    Binary.writeTrace("out/" + id + ".nbt", bestTrace);
-                }
-                r += ";" + bestSolver + ";" + bestEnergy;
-                return r;
             }
+            long bestEnergy = Long.MAX_VALUE;
+            String bestSolver = "-";
+            List<Command> bestTrace = null;
+            String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
+            for (String solverName : solverNames) {
+                long startTime = System.nanoTime();
+                Solver solver = SolverFactory.byName(solverName);
+                switch (mode) {
+                    case ASSEMBLE:
+                        solver.initAssemble(new Matrix(model));
+                        break;
+                    case DESTRUCT:
+                        solver.initDeconstruct(new Matrix(model));
+                        break;
+                    default:
+                        throw new AssertionError("not implemented");
+                }
+                List<Command> trace = solver.getCompleteTrace();
+                long elapsed = System.nanoTime() - startTime;
+                logger.info("generate trace for {} with solver '{}': {}s", id, solverName,
+                        String.format("%.3f", elapsed / 1.0e9));
+                State ownResult = execute(id, solverName, mode, model, trace);
+                if (ownResult == null) {
+                    r += ";invalid";
+                } else {
+                    r += String.format(";%d", ownResult.getEnergy());
+                    if (ownResult.getEnergy() < bestEnergy) {
+                        bestEnergy = ownResult.getEnergy();
+                        bestSolver = solverName;
+                        bestTrace = trace;
+                    }
+                }
+            }
+            if (bestTrace != null) {
+                Binary.writeTrace("out/" + id + ".nbt", bestTrace);
+                r += ";" + bestSolver + ";" + bestEnergy;
+            } else {
+                r += ";INVALID;0";
+            }
+            return r;
+
         }
     }
 
@@ -279,7 +289,13 @@ public class Main {
                     validResult = state.isValidFinalState(model);
                     break;
                 case DESTRUCT:
-                    validResult = state.isMatrixEmpty();
+                    int remaining = state.getMatrix().numFilled();
+                    if (remaining != 0) {
+                        validResult = false;
+                        logger.error("'{}': matrix not empty. Filled: {}", solver, remaining);
+                    } else {
+                        validResult = true;
+                    }
                     break;
                 default:
                     throw new AssertionError("not implemented");

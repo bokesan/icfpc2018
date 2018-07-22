@@ -26,6 +26,10 @@ public class State {
         bots.add(bot1);
     }
 
+    public Matrix getMatrix() {
+        return matrix;
+    }
+
     public long getEnergy() {
         return energy;
     }
