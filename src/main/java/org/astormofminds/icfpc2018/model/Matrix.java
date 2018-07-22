@@ -34,6 +34,30 @@ public class Matrix {
         return resolution * resolution * x + resolution * y + z;
     }
 
+    private int indexBelow(int i) {
+        return i - resolution;
+    }
+
+    private int indexAbove(int i) {
+        return i + resolution;
+    }
+
+    private int indexBehind(int i) {
+        return i + 1;
+    }
+
+    private int indexBefore(int i) {
+        return i - 1;
+    }
+
+    private int indexLeft(int i) {
+        return i - resolution * resolution;
+    }
+
+    private int indexRight(int i) {
+        return i + resolution * resolution;
+    }
+
     private Coordinate toCoordinate(int index) {
         int z = index % resolution;
         int i = index / resolution;
@@ -99,7 +123,8 @@ public class Matrix {
             return false;
         } else {
             voxels.clear(i);
-            postClear(c);
+            // postClear(c);
+            recomputeGrounded(c);
             return true;
         }
     }
@@ -163,6 +188,49 @@ public class Matrix {
         }
     }
 
+    /**
+     * After
+     */
+    private void recomputeGrounded(Coordinate c) {
+        grounded.clear();
+        // set bottom
+        for (int x = 1; x < resolution - 1; x++) {
+            for (int z = 1; z < resolution - 1; z++) {
+                int i = index(x, 0, z);
+                if (voxels.get(i))
+                    grounded.set(i);
+            }
+        }
+        // now ground all with direct support
+        for (int y = 1; y < resolution - 1; y++) {
+            for (int x = 1; x < resolution - 1; x++) {
+                for (int z = 1; z < resolution - 1; z++) {
+                    int i = index(x, y, z);
+                    if (voxels.get(i) && grounded.get(indexBelow(i))) {
+                        grounded.set(i);
+                    }
+                }
+            }
+        }
+        // and finally check still ungronded ones for groundedness
+        for (int y = resolution - 2; y >= 1; y--) {
+            for (int x = 1; x < resolution - 1; x++) {
+                for (int z = 1; z < resolution - 1; z++) {
+                    int i = index(x, y, z);
+                    if (voxels.get(i) && !grounded.get(i)
+                        && (grounded.get(indexAbove(i))
+                            || grounded.get(indexBelow(i))
+                            || grounded.get(indexLeft(i))
+                            || grounded.get(indexRight(i))
+                            || grounded.get(indexBefore(i))
+                            || grounded.get(indexBehind(i))))
+                    {
+                        ground(Coordinate.of(x, y, z));
+                    }
+                }
+            }
+        }
+    }
 
     public boolean isGrounded(Coordinate c) {
         return isValidForFill(c) && grounded.get(index(c));
