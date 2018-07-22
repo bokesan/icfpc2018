@@ -158,7 +158,9 @@ public class Optimizer {
         //todo be smarter about this
         // if any flip is contained, we do nothing to not mess up harmonic state
         for (int i = result.size() - 1; i > (result.size() - 1 - (numSteps * numBots)); i--) {
-            if (result.get(i).equals(Command.FLIP)) return;
+            if (result.get(i).equals(Command.FLIP)) {
+                return;
+            }
         }
 
         Command moves[][] = new Command[numSteps][numBots];
@@ -168,17 +170,22 @@ public class Optimizer {
                 moves[i][j] = result.remove(result.size() - 1);
             }
         }
-        //fill waits with later commands instead
-        for (int i = 0; i < numSteps - 1; i++) {
+        //fill waits with later commands instead where possible
+        for (int i = numSteps - 1; i > 0; i--) {
+            boolean canmove = true;
             for (int j = 0; j < numBots; j++) {
-                if (moves[i][j].equals(Command.WAIT)) {
-                    for (int k = i+1; k < numSteps; k++) {
-                        //if a later command for the same bot is not a wait, we move it
-                        if (!moves[k][j].equals(Command.WAIT)) {
-                            moves[i][j] = moves[k][j];
-                            moves[k][j] = Command.WAIT;
-                            break;
-                        }
+                if (!moves[i][j].equals(Command.WAIT)) {
+                    if (!moves[i-1][j].equals(Command.WAIT)) {
+                        canmove = false;
+                        break;
+                    }
+                }
+            }
+            if (canmove) {
+                for (int j = 0; j < numBots; j++) {
+                    if (!moves[i][j].equals(Command.WAIT)) {
+                        moves[i-1][j] = moves[i][j];
+                        moves[i][j] = Command.WAIT;
                     }
                 }
             }

@@ -4,9 +4,12 @@ import org.astormofminds.icfpc2018.model.*;
 import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedException;
 import org.astormofminds.icfpc2018.solver.exceptions.WrongNumberOfBotsException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-public class Swarm2 implements Solver {
+public class Surround2 implements Solver {
 
     private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
@@ -59,8 +62,8 @@ public class Swarm2 implements Solver {
             return result;
         }
 
-        //move to starting point and one further right
-        while (posx <= xmin) {
+        //move to starting point and one further right - we cover more ground
+        while (posx < xmin + 1) {
             int steps = Math.min(xmin + 1 - posx, 15);
             result.add(Command.sMove(Difference.of(steps, 0, 0)));
             posx += steps;
@@ -71,8 +74,8 @@ public class Swarm2 implements Solver {
             result.add(Command.sMove(Difference.of(0, steps, 0)));
             posy += steps;
         }
-        while (posz < zmin) {
-            int steps = Math.min(zmin - posz, 15);
+        while (posz < zmin - 1) {
+            int steps = Math.min(zmin - 1 - posz, 15);
             result.add(Command.sMove(Difference.of(0, 0, steps)));
             posz += steps;
         }
@@ -111,41 +114,59 @@ public class Swarm2 implements Solver {
 
         //print all layers
         boolean moveAway = true;
-        for (int y = ymin + 1; y < ymax + 2; y++) {
+        for (int y = ymin + 1; y < ymax + 2; y += 3) {
             int issuedCommands = result.size();
             if (moveAway) {
-                for (int z = zmin; z <= zmax; z++) {
-                    allFillBelow(numBots);
+                for (int z = zmin -1; z <= zmax + 1; z++) {
+                    allFill(numBots, -1);
                     //move one away, unless it is the last run through
-                    if (z < zmax) {
+                    if (z < zmax + 1) {
                         moveFar(numBots);
                     }
                 }
                 // move one up, unless it is the last run through
-                if (y < ymax + 1) {
-                    moveUp(numBots);
+                if (y < ymax - 1) {
+                    moveUp(numBots, 3);
                 }
             } else {
                 // move from far to near on even layers
-                for (int z = zmax; z >= zmin; z--) {
-                    allFillBelow(numBots);
+                for (int z = zmax + 1; z >= zmin - 1; z--) {
+                    allFill(numBots, 1);
                     //move one here, unless it is the last run through
-                    if (z > zmin) {
+                    if (z > zmin - 1) {
                         moveNear(numBots);
                     }
                 }
-                // move one up, unless it is the last run through
-                if (y < ymax + 1) {
-                    moveUp(numBots);
+                // move 3 up, unless it is the last run through
+                if (y < ymax - 1) {
+                    moveUp(numBots, 3);
+                }
+            }
+            if (switchOff) {
+                switchOff = false;
+                harmonicHigh = false;
+                result.add(Command.FLIP);
+                for (int i = 1; i < numBots; i++) {
+                    result.add(Command.WAIT);
                 }
             }
             moveAway = !moveAway;
+            //optimize moves
             if ((result.size() - issuedCommands) % numBots != 0) {
                 //something was messed up, there should be an equal number of commands for each bot
                 throw new WrongNumberOfBotsException();
             }
             int steps = (result.size() - issuedCommands) / numBots;
             Optimizer.optimizeBotMoves(steps, numBots, result);
+            //if we can switch off high harmonic and have not yet, do it now
+            if (switchOff) {
+                switchOff = false;
+                harmonicHigh = false;
+                result.add(Command.FLIP);
+                for (int i = 1; i < numBots; i++) {
+                    result.add(Command.WAIT);
+                }
+            }
         }
 
         //merge all bots through fusion
@@ -167,9 +188,21 @@ public class Swarm2 implements Solver {
         }
 
         //return home
-        while (posz > 0) moveNear(1);
-        while (posy > 0) moveDown(1);
-        while (posx > 0) moveLeft();
+        while (posz > 0) {
+            int steps = Math.min(15, posz);
+            result.add(Command.sMove(Difference.of(0, 0, -steps)));
+            posz -= steps;
+        };
+        while (posy > 0) {
+            int steps = Math.min(15, posy);
+            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            posy -= steps;
+        }
+        while (posx > 0) {
+            int steps = Math.min(15, posx);
+            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
+            posx -= steps;
+        }
         //end finally, stop
         result.add(Command.HALT);
 
@@ -186,7 +219,7 @@ public class Swarm2 implements Solver {
         }
     }
 
-    private void allFillBelow(int numBots) {
+    private void allFill(int numBots, int zFill) {
         int extraSteps = 0;
         //fill fields below
         for (int i = 0; i < numBots; i++) {
@@ -205,8 +238,42 @@ public class Swarm2 implements Solver {
         }
         extraSteps += checkHarmonic(numBots);
 
-        //remove unnecessary waits
-        Optimizer.optimizeBotWaits(3 + extraSteps, numBots, result);
+        //fill fields same level
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x - 1, posy, posz, -1, 0, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x, posy, posz + zFill, 0, 0, zFill);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x + 1, posy, posz, 1, 0, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+
+        //fields above
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x - 1, posy + 1, posz, -1, 1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x, posy + 1, posz, 0, 1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+        for (int i = 0; i < numBots; i++) {
+            int x = posx + i * 3;
+            fillIfRequired(x + 1, posy + 1, posz, 1, 1, 0);
+        }
+        extraSteps += checkHarmonic(numBots);
+
+        //optimize waits
+        Optimizer.optimizeBotWaits(9 + extraSteps, numBots, result);
     }
 
     private int checkHarmonic(int numbots) {
@@ -265,18 +332,11 @@ public class Swarm2 implements Solver {
         }
     }
 
-    private void moveDown(int numbots) {
+    private void moveUp(int numbots, int steps) {
         for (int i = 0; i < numbots; i++) {
-            result.add(Command.DOWN);
+            result.add(Command.sMove(Difference.of(0, steps, 0)));
         }
-        posy--;
-    }
-
-    private void moveUp(int numbots) {
-        for (int i = 0; i < numbots; i++) {
-            result.add(Command.UP);
-        }
-        posy++;
+        posy+=steps;
     }
 
     private void moveFar(int numbots) {
@@ -291,15 +351,5 @@ public class Swarm2 implements Solver {
             result.add(Command.NEAR);
         }
         posz--;
-    }
-
-    private void moveRight() {
-        result.add(Command.RIGHT);
-        posx++;
-    }
-
-    private void moveLeft() {
-        result.add(Command.LEFT);
-        posx--;
     }
 }
