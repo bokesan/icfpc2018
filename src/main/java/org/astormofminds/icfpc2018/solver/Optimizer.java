@@ -154,7 +154,7 @@ public class Optimizer {
      * @param numBots how many bots are involved
      * @param result the list of commands to update
      */
-    public static void optimizeBotWaits(int numSteps, int numBots, List<Command> result) {
+    static void optimizeBotWaits(int numSteps, int numBots, List<Command> result) {
         Command moves[][] = new Command[numSteps][numBots];
         //move commands from results to array
         for (int i = numSteps - 1; i >= 0; i--) {
@@ -205,7 +205,7 @@ public class Optimizer {
 
     // it is assumed that bots move simultaneously only, and in steps of one, and one direction only
     // replace consecutive moves by longer moves
-    public static void optimizeBotMoves(int steps, int numBots, List<Command> result) {
+    static void optimizeBotMoves(int steps, int numBots, List<Command> result) {
         Command moves[][] = new Command[steps][numBots];
         //move commands from results to array
         for (int i = steps - 1; i >= 0; i--) {

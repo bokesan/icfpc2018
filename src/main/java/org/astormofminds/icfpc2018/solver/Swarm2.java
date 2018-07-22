@@ -5,8 +5,9 @@ import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedExcepti
 import org.astormofminds.icfpc2018.solver.exceptions.WrongNumberOfBotsException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class Swarm2 implements Solver {
+class Swarm2 implements Solver {
 
     private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
@@ -22,7 +23,10 @@ public class Swarm2 implements Solver {
     @Override
     public boolean initAssemble(Matrix matrix) {
         this.targetMatrix = matrix;
-        return true;
+        Region box = targetMatrix.getBoundingBox();
+        int xmin = box.getMinX();
+        int xmax = box.getMaxX();
+        return xmax - xmin <= 120;
     }
 
     @Override
@@ -176,7 +180,7 @@ public class Swarm2 implements Solver {
             int steps = Math.min(15, posz);
             result.add(Command.sMove(Difference.of(0, 0, -steps)));
             posz -= steps;
-        };
+        }
         while (posy > 0) {
             int steps = Math.min(15, posy);
             result.add(Command.sMove(Difference.of(0, -steps, 0)));
@@ -222,13 +226,8 @@ public class Swarm2 implements Solver {
     }
 
     private int checkHarmonic(int numbots) {
-        Set<Coordinate> floats = new HashSet<>();
-        for (Coordinate c : fresh) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
-        for (Coordinate c : floating) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
+        Set<Coordinate> floats = fresh.stream().filter(c -> !currentMatrix.isGrounded(c)).collect(Collectors.toSet());
+        floats.addAll(floating.stream().filter(c -> !currentMatrix.isGrounded(c)).collect(Collectors.toList()));
         floating.clear();
         fresh.clear();
         floating.addAll(floats);
@@ -277,13 +276,6 @@ public class Swarm2 implements Solver {
         }
     }
 
-    private void moveDown(int numbots) {
-        for (int i = 0; i < numbots; i++) {
-            result.add(Command.DOWN);
-        }
-        posy--;
-    }
-
     private void moveUp(int numbots) {
         for (int i = 0; i < numbots; i++) {
             result.add(Command.UP);
@@ -303,15 +295,5 @@ public class Swarm2 implements Solver {
             result.add(Command.NEAR);
         }
         posz--;
-    }
-
-    private void moveRight() {
-        result.add(Command.RIGHT);
-        posx++;
-    }
-
-    private void moveLeft() {
-        result.add(Command.LEFT);
-        posx--;
     }
 }

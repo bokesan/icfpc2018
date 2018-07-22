@@ -7,7 +7,7 @@ import org.astormofminds.icfpc2018.model.Matrix;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TwinSolver implements Solver {
+class TwinSolver implements Solver {
 
     private Matrix target;
 
@@ -88,14 +88,11 @@ public class TwinSolver implements Solver {
                 } else {
                     //we dont want a flip
                     if (leftC.equals(Command.FLIP)) {
-                        if (rightC.equals(Command.FLIP)) {
-                            //both want to flip, we just skip those
-                            continue;
-                        } else {
+                        if (!rightC.equals(Command.FLIP)) {
                             //only left wanted to flip, replace by wait
                             result.add(Command.WAIT);
                             result.add(rightC);
-                        }
+                        } //otherwise both wanted to flip, we ignore
                     } else {
                         //right has the flip, replace it by wait
                         result.add(leftC);

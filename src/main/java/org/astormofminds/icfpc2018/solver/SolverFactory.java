@@ -17,6 +17,7 @@ public class SolverFactory {
             case "eatswarm": return new EatingSwarm();
             case "eatswarm2": return new Eating2();
             case "zapper": return new Zapper();
+            case "reconstructor": return new Reconstructor();
             default: throw new SolverNotFoundException();
         }
     }

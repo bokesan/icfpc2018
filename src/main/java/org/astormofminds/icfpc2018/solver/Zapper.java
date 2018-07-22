@@ -6,7 +6,7 @@ import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedExcepti
 import java.util.ArrayList;
 import java.util.List;
 
-public class Zapper implements Solver {
+class Zapper implements Solver {
 
     private Matrix currentMatrix = null;
     protected List<Command> result;
@@ -111,16 +111,15 @@ public class Zapper implements Solver {
 
         // ZAP the structure
         int xdif = xmax - xmin;
-        int ydif = ymax;
         int zdif = zmax - zmin;
-        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ydif, zdif)));         //1
-        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ydif, zdif)));       //2
-        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ydif, -zdif)));     //4
-        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ydif, -zdif)));    //8
-        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ydif, zdif)));      //6
-        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ydif, -zdif)));       //3
-        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ydif, -zdif)));      //7
-        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ydif, zdif)));        //5
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ymax, zdif)));         //1
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ymax, zdif)));       //2
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, ymax, -zdif)));     //4
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ymax, -zdif)));    //8
+        result.add(Command.gVoid(Difference.of(-1, 0, 1), Difference.of(-xdif, -ymax, zdif)));      //6
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, ymax, -zdif)));       //3
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ymax, -zdif)));      //7
+        result.add(Command.gVoid(Difference.of(1, 0, 1), Difference.of(xdif, -ymax, zdif)));        //5
 
         //merge bots again
         while (y1 > 1) {

@@ -7,8 +7,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class Swarm60Solver implements Solver {
+class Swarm60Solver implements Solver {
 
     private Matrix targetMatrix = null;
     private Matrix currentMatrix = null;
@@ -24,7 +25,10 @@ public class Swarm60Solver implements Solver {
     @Override
     public boolean initAssemble(Matrix matrix) {
         this.targetMatrix = matrix;
-        return true;
+        Region box = targetMatrix.getBoundingBox();
+        int xmin = box.getMinX();
+        int xmax = box.getMaxX();
+        return xmax - xmin <= 120;
     }
 
     @Override
@@ -193,13 +197,8 @@ public class Swarm60Solver implements Solver {
     }
 
     private void checkHarmonic(int numbots) {
-        Set<Coordinate> floats = new HashSet<>();
-        for (Coordinate c : fresh) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
-        for (Coordinate c : floating) {
-            if (!currentMatrix.isGrounded(c)) floats.add(c);
-        }
+        Set<Coordinate> floats = fresh.stream().filter(c -> !currentMatrix.isGrounded(c)).collect(Collectors.toSet());
+        floats.addAll(floating.stream().filter(c -> !currentMatrix.isGrounded(c)).collect(Collectors.toList()));
         floating.clear();
         fresh.clear();
         floating.addAll(floats);
