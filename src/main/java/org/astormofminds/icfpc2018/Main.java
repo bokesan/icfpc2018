@@ -1,10 +1,7 @@
 package org.astormofminds.icfpc2018;
 
 import org.astormofminds.icfpc2018.io.Binary;
-import org.astormofminds.icfpc2018.model.Command;
-import org.astormofminds.icfpc2018.model.ExecutionException;
-import org.astormofminds.icfpc2018.model.Matrix;
-import org.astormofminds.icfpc2018.model.State;
+import org.astormofminds.icfpc2018.model.*;
 import org.astormofminds.icfpc2018.solver.Solver;
 import org.astormofminds.icfpc2018.solver.SolverFactory;
 import org.slf4j.Logger;
@@ -22,8 +19,9 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static boolean parallel = true;
-    private static boolean testDefaultTrace = false;
+    private static final boolean parallel = true;
+    private static final boolean testDefaultTrace = false;
+    private static final boolean STOP_ON_ERROR = true;
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -159,6 +157,9 @@ public class Main {
                         String.format("%.3f", elapsed / 1.0e9));
                 State ownResult = execute(id, solverName, mode, model, trace);
                 if (ownResult == null) {
+                    if (STOP_ON_ERROR) {
+                        System.exit(1);
+                    }
                     r += ";invalid";
                 } else {
                     r += String.format(";%d", ownResult.getEnergy());
@@ -245,25 +246,19 @@ public class Main {
     private static void exec(String modelFile, String traceFile) throws IOException {
         try (InputStream ms = new BufferedInputStream(new FileInputStream(modelFile));
              InputStream ts = new BufferedInputStream(new FileInputStream(traceFile))) {
+            String id = new File(modelFile).getName().substring(0, 5);
+            ProblemMode mode = ProblemMode.of(id.charAt(1));
             logger.info("loading target model...");
             Matrix model = Binary.readModel(ms);
             logger.info("loading trace...");
             List<Command> trace = Binary.readTrace(ts);
-            State state = new State(trace, new Matrix(model.getResolution()));
-            long t0 = System.nanoTime();
-            for (;;) {
-                if (!state.timeStep()) {
-                    break;
-                }
-            }
-            long elapsed = System.nanoTime() - t0;
-            if (state.isValidFinalState(model)) {
+            State state = execute(id, "-", mode, model, trace);
+            if (state != null) {
                 System.out.println("Trace correct.");
             } else {
                 System.out.println("Trace invalid.");
             }
             System.out.println("Finale state: " + state);
-            System.out.format("Elapsed time: %.1f ms%n", elapsed / 1.0e6);
         }
     }
 
@@ -283,18 +278,31 @@ public class Main {
             }
             while (state.timeStep())
                 ;
-            boolean validResult;
+            boolean validResult = true;
             switch (mode) {
                 case ASSEMBLE:
-                    validResult = state.isValidFinalState(model);
+                    if (state.getHarmonics() == HarmonicsState.LOW && !state.getMatrix().allGrounded()) {
+                        logger.error("Not all grounded in low harmonics");
+                        validResult = false;
+                    }
+                    if (!state.getBots().isEmpty()) {
+                        logger.error("bots not empty");
+                        validResult = false;
+                    }
+                    if (!state.getTrace().isEmpty()) {
+                        logger.error("trace not empty");
+                        validResult = false;
+                    }
+                    if (!state.getMatrix().equals(model)) {
+                        logger.error("target model mismatch");
+                        validResult = false;
+                    }
                     break;
                 case DESTRUCT:
                     int remaining = state.getMatrix().numFilled();
                     if (remaining != 0) {
                         validResult = false;
-                        logger.error("'{}': matrix not empty. Filled: {}", solver, remaining);
-                    } else {
-                        validResult = true;
+                        logger.error("matrix not empty. Solver {}, filled: {}", solver, remaining);
                     }
                     break;
                 default:

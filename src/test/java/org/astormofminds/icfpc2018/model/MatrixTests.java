@@ -16,7 +16,7 @@ public class MatrixTests {
         Matrix m = new Matrix(10);
         m.fill(Coordinate.of(1, 1, 1));
         m.fill(Coordinate.of(1, 2, 1));
-        m.fill(Coordinate.of(6, 4, 9));
+        m.fill(Coordinate.of(6, 4, 8));
         assertEquals(3, m.numFilled());
     }
 

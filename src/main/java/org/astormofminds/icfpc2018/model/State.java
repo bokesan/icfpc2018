@@ -26,6 +26,18 @@ public class State {
         bots.add(bot1);
     }
 
+    public HarmonicsState getHarmonics() {
+        return harmonics;
+    }
+
+    public Set<Nanobot> getBots() {
+        return Collections.unmodifiableSet(bots);
+    }
+
+    public List<Command> getTrace() {
+        return Collections.unmodifiableList(trace);
+    }
+
     public Matrix getMatrix() {
         return matrix;
     }
@@ -36,17 +48,6 @@ public class State {
 
     public int getResolution() {
         return matrix.getResolution();
-    }
-
-    public boolean isValidFinalState(Matrix target) {
-        return harmonics == HarmonicsState.LOW
-                && matrix.equals(target)
-                && bots.isEmpty()
-                && trace.isEmpty();
-    }
-
-    public boolean isMatrixEmpty() {
-        return matrix.numFilled() == 0;
     }
 
     private int getSize() {
@@ -65,8 +66,7 @@ public class State {
      * {@code false} if the system is halted after the time step.
      */
     public boolean timeStep() {
-        if ((steps & 1023) == 0) {
-            logger.debug("steps: {}", steps);
+        if ((steps & 0x7fff) == 0 || logger.isDebugEnabled()) {
             if (!isWellFormed()) {
                 throw new ExecutionException("not well-formed");
             }
@@ -90,7 +90,7 @@ public class State {
             Nanobot bot = bc.bot;
             Coordinate c = bot.getPos();
             Command cmd = bc.command;
-            // logger.info("step: {} bot: {} command: {}", steps, bot, cmd);
+            logger.debug("step: {} bot: {} command: {}", steps, bot, cmd);
             switch (cmd.getOp()) {
                 case HALT:
                     if (!c.isOrigin()) {
@@ -117,14 +117,20 @@ public class State {
                 case SMOVE:
                     bot.setPos(c.plus(cmd.getD1()));
                     if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot.getPos() + " [steps=" + steps + "]");
+                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
+                    }
+                    if (matrix.isFull(bot.getPos())) {
+                        throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
                     }
                     energy += 2L * cmd.getD1().mlen();
                     break;
                 case LMOVE:
                     bot.setPos(c.plus(cmd.getD1()).plus(cmd.getD2()));
                     if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot.getPos());
+                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
+                    }
+                    if (matrix.isFull(bot.getPos())) {
+                        throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
                     }
                     energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
                     break;
@@ -153,7 +159,10 @@ public class State {
                     }
                     c1 = c.plus(nd);
                     if (!matrix.isValid(c1)) {
-                        throw new ExecutionException(cmd + ": bot fissured out of matrix: " + bot.getPos());
+                        throw new ExecutionException(cmd + ": bot fissured out of matrix: " + bot);
+                    }
+                    if (matrix.isFull(c1)) {
+                        throw new ExecutionException(cmd + ": bot fissured on full voxel: " + c1);
                     }
                     bots.add(bot.fissure(c1, m));
                     energy += 24;
@@ -303,7 +312,7 @@ public class State {
             }
         }
         if (bots.stream().anyMatch(b -> matrix.isFull(b.getPos()))) {
-            logger.info("bot at full");
+            logger.info("bot at full voxel");
             return false;
         }
         if (bots.stream().anyMatch(b -> bots.stream().anyMatch(b1 -> b.getPos().equals(b1.getPos()) && !b.equals(b1)))) {

@@ -85,6 +85,15 @@ public class Coordinate {
             && z >= 0 && z < resolution;
     }
 
+    /**
+     * Is this coordinate valid for fill in a given resolution?
+     */
+    public boolean isValidForFill(int resolution) {
+        return x > 0  && x < resolution - 1
+            && y >= 0 && y < resolution - 1
+            && z > 0  && z < resolution - 1;
+    }
+
     @Override
     public String toString() {
         return "(" + x + ", " + y + ", " + z + ")";

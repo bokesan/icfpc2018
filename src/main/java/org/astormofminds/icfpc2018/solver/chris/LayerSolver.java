@@ -39,13 +39,13 @@ public class LayerSolver implements Solver {
     @Override
     public List<Command> getCompleteTrace() {
         Region box = target.getBoundingBox();
-        int top = box.getC2().getY();
-        int back = box.getC2().getZ();
-        int right = box.getC2().getX();
-        int left = box.getC1().getX();
+        int top = box.getMaxY();
+        int back = box.getMaxZ();
+        int right = box.getMaxX();
+        int left = box.getMinX();
         for (int y = 0; y <= top; y++) {
-            for (int z = box.getC1().getZ(); z <= back; ) {
-                for (int x = box.getC1().getX(); x <= right; x++) {
+            for (int z = box.getMinZ(); z <= back; ) {
+                for (int x = left; x <= right; x++) {
                     Coordinate c = Coordinate.of(x, y, z);
                     if (target.isFull(c) && !state.isFull(c)) {
                         moveTo(c.above());
@@ -125,6 +125,7 @@ public class LayerSolver implements Solver {
     }
 
     private void moveTo(Coordinate c) {
+        // FIXME: avoid full voxels
         Difference d = Difference.between(pos, c);
         if (Math.abs(d.getDy()) > 0) {
             emit(Command.sMove(Difference.ofY(Math.min(15, Math.abs(d.getDy())) * Integer.signum(d.getDy()))));
