@@ -40,11 +40,11 @@ public class Zapper implements Solver {
         }
 
         Region box = currentMatrix.getBoundingBox();
-        int xmin = Math.min(box.getC1().getX(), box.getC2().getX());
-        int zmin = Math.min(box.getC1().getZ(), box.getC2().getZ());
-        int xmax = Math.max(box.getC1().getX(), box.getC2().getX());
-        int ymax = Math.max(box.getC1().getY(), box.getC2().getY());
-        int zmax = Math.max(box.getC1().getZ(), box.getC2().getZ());
+        int xmin = box.getMinX();
+        int zmin = box.getMinZ();
+        int xmax = box.getMaxX();
+        int ymax = box.getMaxY();
+        int zmax = box.getMaxZ();
 
         //we can only zap a region max 30*30*30
         if (xmax - xmin + 1 > 30 || ymax > 30 || zmax -zmin + 1 > 30) {
@@ -80,7 +80,7 @@ public class Zapper implements Solver {
         result.add(Command.fission(Difference.ofZ(1), 10));
         //move new
         int z1 = zmin;
-        while (z1 < zmax + 1) {
+        while (z1 < zmax - 1) {
             result.add(Command.WAIT);
             result.add(Command.WAIT);
             int steps = Math.min(15, zmax + 1 - z1);
@@ -95,7 +95,7 @@ public class Zapper implements Solver {
         result.add(Command.fission(Difference.ofY(1), 5));
         //move bots 5 - 8
         int y1 = 1;
-        while (y1 < ymax) {
+        while (y1 < ymax - 1) {
             int steps = Math.min(15, ymax - y1);
             result.add(Command.WAIT);
             result.add(Command.WAIT);
