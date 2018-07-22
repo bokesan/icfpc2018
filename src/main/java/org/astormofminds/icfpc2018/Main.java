@@ -78,14 +78,14 @@ public class Main {
         long startTime = System.nanoTime();
         File targetDir = new File(problemFolder);
         File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
-        Arrays.sort(targets);
+        // Arrays.sort(targets);
         List<File> targetFiles = Arrays.asList(targets);
         System.out.print("ID;R;default");
         for (String solver : solverNames) {
             System.out.print(";" + solver);
         }
         System.out.println(";bestSolver;bestEnergy");
-        targetFiles.stream()
+        targetFiles.parallelStream()
                 .map(t -> {
                     try {
                         return solveProblem(traceFolder, solverNames, t);
@@ -133,6 +133,7 @@ public class Main {
                 List<Command> bestTrace = null;
                 String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                 for (String solverName : solverNames) {
+                    long startTime = System.nanoTime();
                     Solver solver = SolverFactory.byName(solverName);
                     switch (mode) {
                         case ASSEMBLE:
@@ -145,6 +146,9 @@ public class Main {
                             throw new AssertionError("not implemented");
                     }
                     List<Command> trace = solver.getCompleteTrace();
+                    long elapsed = System.nanoTime() - startTime;
+                    logger.info("generate trace for {} with solver '{}': {}s", id, solverName,
+                            String.format("%.3f", elapsed / 1.0e9));
                     State ownResult = execute(id, solverName, mode, model, trace);
                     if (ownResult == null) {
                         r += ";invalid";
@@ -254,7 +258,7 @@ public class Main {
     }
 
     private static State execute(String problemId, String solver, ProblemMode mode, Matrix model, List<Command> trace) {
-        logger.info("execute {} with solver '{}'", problemId, solver);
+        long startTime = System.nanoTime();
         try {
             State state;
             switch (mode) {
@@ -283,8 +287,10 @@ public class Main {
             return validResult ? state : null;
         } catch (ExecutionException ex) {
             logger.error("Execution exception in problem " + problemId + " with solver '" + solver + "'", ex);
-            System.exit(1);
             return null;
+        } finally {
+            long elapsed = System.nanoTime() - startTime;
+            logger.info("exec {} with solver '{}': {}s", problemId, solver, String.format("%.3f", elapsed / 1.0e9));
         }
     }
 }
