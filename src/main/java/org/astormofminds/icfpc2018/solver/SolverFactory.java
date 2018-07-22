@@ -15,6 +15,8 @@ public class SolverFactory {
             case "twin": return new TwinSolver();
             case "swarm": return new Swarm60Solver();
             case "surround": return new SurroundSwarmSolver();
+            case "eatswarm": return new EatingSwarm();
+            case "zapper": return new Zapper();
             default: throw new SolverNotFoundException();
         }
     }
