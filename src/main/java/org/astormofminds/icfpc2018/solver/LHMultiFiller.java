@@ -1,6 +1,7 @@
 package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.solver.old.LowHarmonicSolver;
 
 import java.util.HashSet;
 import java.util.Set;

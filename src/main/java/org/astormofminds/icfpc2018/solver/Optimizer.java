@@ -2,8 +2,9 @@ package org.astormofminds.icfpc2018.solver;
 
 import org.astormofminds.icfpc2018.model.Command;
 import org.astormofminds.icfpc2018.model.Difference;
+import org.astormofminds.icfpc2018.solver.exceptions.BrokenFillAndFlipOrderException;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Optimizer {
@@ -147,4 +148,110 @@ public class Optimizer {
         commands.add(lastFill, Command.FLIP);
     }
 
+    /**
+     * Takes the commands and reduces unnecessary waits
+     * @param numSteps how many execution ticks should be covered
+     * @param numBots how many bots are involved
+     * @param result the list of commands to update
+     */
+    public static void optimizeBotWaits(int numSteps, int numBots, List<Command> result) {
+        //todo be smarter about this
+        // if any flip is contained, we do nothing to not mess up harmonic state
+        for (int i = result.size() - 1; i > (result.size() - 1 - (numSteps * numBots)); i--) {
+            if (result.get(i).equals(Command.FLIP)) return;
+        }
+
+        Command moves[][] = new Command[numSteps][numBots];
+        //move commands from results to array
+        for (int i = numSteps - 1; i >= 0; i--) {
+            for (int j = numBots - 1; j >= 0; j--) {
+                moves[i][j] = result.remove(result.size() - 1);
+            }
+        }
+        //fill waits with later commands instead
+        for (int i = 0; i < numSteps - 1; i++) {
+            for (int j = 0; j < numBots; j++) {
+                if (moves[i][j].equals(Command.WAIT)) {
+                    for (int k = i+1; k < numSteps; k++) {
+                        //if a later command for the same bot is not a wait, we move it
+                        if (!moves[k][j].equals(Command.WAIT)) {
+                            moves[i][j] = moves[k][j];
+                            moves[k][j] = Command.WAIT;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        //remove rows full of waits starting at the end until we hit a non-empty one
+        int maxrow = -1;
+        for (int i = numSteps - 1; i >= 0; i--) {
+            boolean empty = true;
+            for (int j = 0; j < numBots; j++) {
+                if (!moves[i][j].equals(Command.WAIT)) {
+                    empty = false;
+                    break;
+                }
+            }
+            if (!empty) {
+                maxrow = i;
+                break;
+            }
+        }
+        //copy commands back to the result
+        for (int i = 0; i <= maxrow; i++) {
+            result.addAll(Arrays.asList(moves[i]).subList(0, numBots));
+        }
+    }
+
+    // it is assumed that bots move simultaneously only, and in steps of one, and one direction only
+    // replace consecutive moves by longer moves
+    public static void optimizeBotMoves(int steps, int numBots, List<Command> result) {
+        Command moves[][] = new Command[steps][numBots];
+        //move commands from results to array
+        for (int i = steps - 1; i >= 0; i--) {
+            for (int j = numBots - 1; j >= 0; j--) {
+                moves[i][j] = result.remove(result.size() - 1);
+            }
+        }
+        //add commands back to result, combining same direction movements
+        int i = 0;
+        while (i < steps) {
+            //check whether the current row is bots moving
+            Command c = moves[i][0];
+            if (c.equals(Command.FAR) || c.equals(Command.NEAR)) {
+                //check whether the following row has the same move
+                int consecutive = 1;
+                int j = i + 1;
+                while (j < steps) {
+                    if (moves[j][0].equals(Command.FAR) || moves[j][0].equals(Command.NEAR)) {
+                        consecutive++;
+                        j++;
+                    } else {
+                        break;
+                    }
+                    //we cannot make smoves longer than 15
+                    if (consecutive == 15) break;
+                }
+                //if we have nor extra movement, just add back
+                if (consecutive == 1) {
+                    result.addAll(Arrays.asList(moves[i]).subList(0, numBots));
+                    i++;
+                } else {
+                    //we combine moves
+                    int direction = 1;
+                    if (c.equals(Command.NEAR)) direction = -1;
+                    for (int b = 0; b < numBots; b++) {
+                        result.add(Command.sMove(Difference.ofZ(direction * consecutive)));
+                    }
+                    i += consecutive;
+                }
+
+            } else {
+                //no move, just add commands back
+                result.addAll(Arrays.asList(moves[i]).subList(0, numBots));
+                i++;
+            }
+        }
+    }
 }

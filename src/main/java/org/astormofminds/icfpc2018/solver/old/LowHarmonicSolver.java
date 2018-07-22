@@ -1,6 +1,9 @@
-package org.astormofminds.icfpc2018.solver;
+package org.astormofminds.icfpc2018.solver.old;
 
 import org.astormofminds.icfpc2018.model.*;
+import org.astormofminds.icfpc2018.solver.Optimizer;
+import org.astormofminds.icfpc2018.solver.Solver;
+import org.astormofminds.icfpc2018.solver.exceptions.SolverNotInitializedException;
 import org.astormofminds.icfpc2018.util.Util;
 
 import java.util.ArrayList;
