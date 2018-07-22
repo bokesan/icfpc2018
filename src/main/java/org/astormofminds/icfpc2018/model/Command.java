@@ -120,7 +120,7 @@ public class Command {
     }
 
     private static void mustBeFar(Difference d) {
-        if (!d.isNear()) {
+        if (!d.isFar()) {
             throw new IllegalArgumentException("far difference required, but got " + d);
         }
     }

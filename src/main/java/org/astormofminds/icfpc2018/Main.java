@@ -63,7 +63,13 @@ public class Main {
     private static void solve(String modelFile, String traceFile, String solverName) throws IOException {
         Solver solver = SolverFactory.byName(solverName);
         Matrix model = Binary.readModel(new FileInputStream(modelFile));
-        solver.initAssemble(model);
+        if (modelFile.contains("_tgt.mdl")) {
+            solver.initAssemble(model);
+        } else if (modelFile.contains("_src.mdl")) {
+            solver.initDeconstruct(model);
+        } else {
+            throw new UnsupportedOperationException("Cannot process model " + modelFile);
+        }
         List<Command> trace = solver.getCompleteTrace();
         Binary.writeTrace(traceFile, trace);
     }
