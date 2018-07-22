@@ -22,7 +22,7 @@ public class LayerSolver implements Solver {
         this.target = matrix;
         this.trace.clear();
         this.state = new Matrix(target.getResolution());
-        this.pos = Coordinate.ORIGIN;
+        this.pos = Coordinate.origin();
         return true;
     }
 
@@ -88,7 +88,7 @@ public class LayerSolver implements Solver {
         if (harmonics == HarmonicsState.HIGH) {
             emit(Command.FLIP);
         }
-        moveTo(Coordinate.ORIGIN);
+        moveTo(Coordinate.origin());
         emit(Command.HALT);
         return trace;
     }

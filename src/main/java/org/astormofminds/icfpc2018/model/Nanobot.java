@@ -12,7 +12,7 @@ public class Nanobot implements Comparable<Nanobot> {
 
     private Nanobot(int bid) {
         this.bid = bid;
-        this.pos = Coordinate.ORIGIN;
+        this.pos = Coordinate.origin();
         this.seeds = new TreeSet<>();
     }
 

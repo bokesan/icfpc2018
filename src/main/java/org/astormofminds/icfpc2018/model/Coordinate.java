@@ -4,7 +4,7 @@ public class Coordinate {
 
     public static final int MAX_RESOLUTION = 250;
 
-    public static final Coordinate ORIGIN = new Coordinate(0, 0, 0);
+    private static final Coordinate ORIGIN = new Coordinate(0, 0, 0);
 
     private final int x;
     private final int y;
@@ -18,6 +18,10 @@ public class Coordinate {
 
     public static Coordinate of(int x, int y, int z) {
         return new Coordinate(x, y, z);
+    }
+
+    public static Coordinate origin() {
+        return ORIGIN;
     }
 
     public Coordinate plus(Difference d) {

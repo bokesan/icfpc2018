@@ -33,12 +33,12 @@ public class RegionTests {
         assertFalse(region.contains(Coordinate.of(21, 16, 16)));
         assertFalse(region.contains(Coordinate.of(16, 21, 16)));
         assertFalse(region.contains(Coordinate.of(16, 16, 21)));
-        assertFalse(region.contains(Coordinate.ORIGIN));
+        assertFalse(region.contains(Coordinate.origin()));
     }
 
     @Test
     public void testContainsInvalid() {
-        Region region = Region.of(Coordinate.ORIGIN, Coordinate.of(1,1,1));
+        Region region = Region.of(Coordinate.origin(), Coordinate.of(1,1,1));
         assertFalse(region.contains(Coordinate.of(-1, 0, 0)));
         assertFalse(region.contains(Coordinate.of(0, 0, 251)));
     }
