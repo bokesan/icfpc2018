@@ -41,6 +41,10 @@ public class State {
                 && trace.isEmpty();
     }
 
+    public boolean isMatrixEmpty() {
+        return matrix.numFilled() == 0;
+    }
+
     private int getSize() {
         int r = getResolution();
         return r * r * r;

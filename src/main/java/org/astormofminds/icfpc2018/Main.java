@@ -97,16 +97,33 @@ public class Main {
         System.out.format("Elapsed time: %.3f seconds.%n", elapsedTime / 1.0e9);
     }
 
+    enum ProblemMode {
+        ASSEMBLE,
+        DESTRUCT,
+        RECONSTRUCT;
+
+        static ProblemMode of(char c) {
+            switch (c) {
+                case 'A': return ASSEMBLE;
+                case 'D': return DESTRUCT;
+                case 'R': return RECONSTRUCT;
+                default:
+                    throw new IllegalArgumentException("invalid mode: " + c);
+            }
+        }
+    }
+
     private static String solveProblem(String traceFolder, String[] solverNames, File target) throws IOException {
         String id = target.getName();
         id = id.substring(0, id.length() - 8);
+        ProblemMode mode = ProblemMode.of(id.charAt(1));
         String traceFile = traceFolder + "/" + id + ".nbt";
         try (InputStream in = new BufferedInputStream(new FileInputStream(target));
              InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
         ) {
             Matrix model = Binary.readModel(in);
             List<Command> defaultTrace = Binary.readTrace(tin);
-            State dfltResult = execute(model, defaultTrace);
+            State dfltResult = execute(mode, model, defaultTrace);
             if (dfltResult == null) {
                 return(id + ": invalid default trace.");
             } else {
@@ -116,9 +133,18 @@ public class Main {
                 String r = String.format("%s;%d;%d", id, model.getResolution(), bestEnergy);
                 for (String solverName : solverNames) {
                     Solver solver = SolverFactory.byName(solverName);
-                    solver.initAssemble(model);
+                    switch (mode) {
+                        case ASSEMBLE:
+                            solver.initAssemble(model);
+                            break;
+                        case DESTRUCT:
+                            solver.initDeconstruct(model);
+                            break;
+                        default:
+                            throw new AssertionError("not implemented");
+                    }
                     List<Command> trace = solver.getCompleteTrace();
-                    State ownResult = execute(model, trace);
+                    State ownResult = execute(mode, model, trace);
                     if (ownResult == null) {
                         r += ";invalid";
                     } else {
@@ -226,7 +252,7 @@ public class Main {
         }
     }
 
-    private static State execute(Matrix target, List<Command> trace) {
+    private static State execute(ProblemMode mode, Matrix target, List<Command> trace) {
         try {
             State state = new State(target.getResolution(), trace);
             for (; ; ) {
@@ -234,11 +260,18 @@ public class Main {
                     break;
                 }
             }
-            if (state.isValidFinalState(target)) {
-                return state;
-            } else {
-                return null;
+            boolean validResult;
+            switch (mode) {
+                case ASSEMBLE:
+                    validResult = state.isValidFinalState(target);
+                    break;
+                case DESTRUCT:
+                    validResult = state.isMatrixEmpty();
+                    break;
+                default:
+                    throw new AssertionError("not implemented");
             }
+            return validResult ? state : null;
         } catch (ExecutionException ex) {
             logger.error("Execution exception: {}", ex.getMessage());
             return null;
