@@ -1,5 +1,8 @@
 package org.astormofminds.icfpc2018.model;
 
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 public class Region {
 
     private final Coordinate lbn;
@@ -96,6 +99,19 @@ public class Region {
         return getMinX() <= c.getX() && c.getX() <= getMaxX()
             && getMinY() <= c.getY() && c.getY() <= getMaxY()
             && getMinZ() <= c.getZ() && c.getZ() <= getMaxZ();
+    }
+
+    public Stream<Coordinate> coordinates() {
+        // TODO: improve efficiency/lazyness
+        Stream.Builder<Coordinate> builder = Stream.builder();
+        for (int x = getMinX(); x <= getMaxX(); x++) {
+            for (int y = getMinY(); y <= getMaxY(); y++) {
+                for (int z = getMinZ(); z <= getMaxZ(); z++) {
+                    builder.accept(Coordinate.of(x, y, z));
+                }
+            }
+        }
+        return builder.build();
     }
 
     /**

@@ -168,7 +168,44 @@ public class State {
                     break;
                 case GFILL:
                 case GVOID:
-                    // TODO
+                    c1 = c.plus(cmd.getD1());
+                    Region region = Region.of(c1, c1.plus(cmd.getD2()));
+                    if (group.size() != (1 << region.dim())) {
+                        throw new ExecutionException("GFill/GVoid mismatch: region "
+                                + region + ", dim " + region.dim()
+                                + ", but group size " + group.size()
+                                + " (expected " + (1 << region.dim()) + ")");
+                    }
+                    if (group.stream().anyMatch(x -> x.command.getOp() != cmd.getOp())) {
+                        throw new ExecutionException("mixture of GFill and GVoid");
+                    }
+                    if (!region.isValid(getResolution())) {
+                        throw new ExecutionException("invalid region: " + region);
+                    }
+                    if (group.stream().anyMatch(bc1 -> region.contains(bc1.bot.getPos()))) {
+                        throw new ExecutionException("bot inside region");
+                    }
+                    if (group.stream().map(x -> x.bot.getPos().plus(x.command.getD1()))
+                            .collect(Collectors.toSet()).size() < group.size())
+                    {
+                        throw new ExecutionException("multiple bots on region edge");
+                    }
+                    region.coordinates().forEach(c2 -> {
+                        if (cmd.getOp() == Command.Op.GFILL) {
+                            if (matrix.fill(c2)) {
+                                energy += 12;
+                            } else {
+                                energy += 6;
+                            }
+                        } else {
+                            if (matrix.unfill(c2)) {
+                                energy -= 12;
+                            } else {
+                                energy += 3;
+                            }
+                        }
+                    });
+                    break;
                 default:
                     throw new AssertionError();
             }
@@ -194,14 +231,31 @@ public class State {
     private static class GroupKey {
         private final Nanobot single;
         private final Coordinate fusion;
+        private final Region region;
 
         public GroupKey(BotCommand bc) {
+            Nanobot bot = bc.bot;
             Command cmd = bc.command;
-            fusion = cmd.getFusionPosition(bc.bot.getPos());
-            if (fusion != null) {
-                single = null;
-            } else {
-                single = bc.bot;
+            switch (cmd.getOp()) {
+                case FUSIONP:
+                case FUSIONS:
+                    fusion = cmd.getFusionPosition(bc.bot.getPos());
+                    single = null;
+                    region = null;
+                    break;
+                case GFILL:
+                case GVOID:
+                    Coordinate c1 = bot.getPos().plus(cmd.getD1());
+                    Coordinate c2 = c1.plus(cmd.getD2());
+                    region = Region.of(c1, c2);
+                    single = null;
+                    fusion = null;
+                    break;
+                default:
+                    single = bot;
+                    fusion = null;
+                    region = null;
+                    break;
             }
         }
 
@@ -209,13 +263,13 @@ public class State {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             GroupKey other = (GroupKey) o;
-
             if (single != null) {
                 return single.equals(other.single);
-            } else {
+            } else if (fusion != null) {
                 return fusion.equals(other.fusion);
+            } else {
+                return region.equals(other.region);
             }
         }
 
@@ -223,8 +277,10 @@ public class State {
         public int hashCode() {
             if (single != null) {
                 return single.hashCode();
-            } else {
+            } else if (fusion != null) {
                 return fusion.hashCode();
+            } else {
+                return region.hashCode();
             }
         }
     }
