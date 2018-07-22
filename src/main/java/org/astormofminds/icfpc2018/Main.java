@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,7 +16,7 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final boolean parallel = true;
+    private static final boolean parallel = false;
     private static final boolean testDefaultTrace = false;
     private static final boolean STOP_ON_ERROR = true;
 
@@ -294,7 +291,9 @@ public class Main {
                         validResult = false;
                     }
                     if (!state.getMatrix().equals(model)) {
-                        logger.error("target model mismatch");
+                        Set<Coordinate> ts = model.filled().collect(Collectors.toSet());
+                        Set<Coordinate> rs = state.getMatrix().filled().collect(Collectors.toSet());
+                        logger.error("target model mismatch. Model {}, result {}", ts.size(), rs.size());
                         validResult = false;
                     }
                     break;
