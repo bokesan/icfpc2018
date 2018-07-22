@@ -87,142 +87,39 @@ public class State {
         energy += 20L * bots.size();
         for (List<BotCommand> group : groups) {
             BotCommand bc = group.get(0);
-            Nanobot bot = bc.bot;
-            Coordinate c = bot.getPos();
-            Command cmd = bc.command;
-            logger.debug("step: {} bot: {} command: {}", steps, bot, cmd);
-            switch (cmd.getOp()) {
+            logger.debug("step: {} {}", steps, bc);
+            switch (bc.command.getOp()) {
                 case HALT:
-                    if (!c.isOrigin()) {
-                        throw new ExecutionException("halting bot not at origin: " + c);
-                    }
-                    if (bots.size() != 1) {
-                        throw new ExecutionException("halting bot must be last bot: " + bots.size());
-                    }
-                    if (harmonics != HarmonicsState.LOW) {
-                        throw new ExecutionException("harmonics mut be LOW at halt: " + harmonics);
-                    }
-                    bots.clear();
+                    performHalt(bc);
                     steps++;
                     return false;
                 case WAIT:
                     break;
                 case FLIP:
-                    if (harmonics == HarmonicsState.LOW) {
-                        harmonics = HarmonicsState.HIGH;
-                    } else {
-                        harmonics = HarmonicsState.LOW;
-                    }
+                    flipHarmonics();
                     break;
                 case SMOVE:
-                    bot.setPos(c.plus(cmd.getD1()));
-                    if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
-                    }
-                    if (matrix.isFull(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
-                    }
-                    energy += 2L * cmd.getD1().mlen();
+                    performSMove(bc);
                     break;
                 case LMOVE:
-                    bot.setPos(c.plus(cmd.getD1()).plus(cmd.getD2()));
-                    if (!matrix.isValid(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
-                    }
-                    if (matrix.isFull(bot.getPos())) {
-                        throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
-                    }
-                    energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
+                    performLMove(bc);
                     break;
                 case FILL:
-                    Coordinate c1 = c.plus(cmd.getD1());
-                    if (matrix.fill(c1)) {
-                        energy += 12;
-                    } else {
-                        energy += 6;
-                    }
+                    performFill(bc);
                     break;
                 case VOID:
-                    c1 = c.plus(cmd.getD1());
-                    if (matrix.unfill(c1)) {
-                        energy -= 12;
-                    } else {
-                        energy += 3;
-                    }
+                    performVoid(bc);
                     break;
                 case FISSION:
-                    Difference nd = cmd.getD1();
-                    int m = cmd.getM();
-                    int n = bot.getSeeds().size();
-                    if (n == 0 || n <= m) {
-                        throw new ExecutionException(cmd + ": too few seeds");
-                    }
-                    c1 = c.plus(nd);
-                    if (!matrix.isValid(c1)) {
-                        throw new ExecutionException(cmd + ": bot fissured out of matrix: " + bot);
-                    }
-                    if (matrix.isFull(c1)) {
-                        throw new ExecutionException(cmd + ": bot fissured on full voxel: " + c1);
-                    }
-                    bots.add(bot.fissure(c1, m));
-                    energy += 24;
+                    performFission(bc);
                     break;
                 case FUSIONP:
                 case FUSIONS:
-                    if (group.size() != 2) {
-                        throw new ExecutionException(cmd + ": invalid fusion group size (bots=" + bots.size() + "): " + group.size());
-                    }
-                    BotCommand bcs;
-                    if (cmd.getOp() == Command.Op.FUSIONP) {
-                        bcs = group.get(1);
-                    } else {
-                        bcs = bc;
-                        bc = group.get(1);
-                        bot = bc.bot;
-                    }
-                    bots.remove(bcs.bot);
-                    bot.fuseWith(bcs.bot);
-                    energy -= 24;
+                    performFusion(group);
                     break;
                 case GFILL:
                 case GVOID:
-                    c1 = c.plus(cmd.getD1());
-                    Region region = Region.of(c1, c1.plus(cmd.getD2()));
-                    if (group.size() != (1 << region.dim())) {
-                        throw new ExecutionException(cmd + ": GFill/GVoid mismatch: region "
-                                + region + ", dim " + region.dim()
-                                + ", but group size " + group.size()
-                                + " (expected " + (1 << region.dim()) + ")");
-                    }
-                    if (group.stream().anyMatch(x -> x.command.getOp() != cmd.getOp())) {
-                        throw new ExecutionException(cmd + ": mixture of GFill and GVoid");
-                    }
-                    if (!region.isValid(getResolution())) {
-                        throw new ExecutionException(cmd + ": invalid region: " + region);
-                    }
-                    if (group.stream().anyMatch(bc1 -> region.contains(bc1.bot.getPos()))) {
-                        throw new ExecutionException(cmd + ": bot inside region");
-                    }
-                    if (group.stream().map(x -> x.bot.getPos().plus(x.command.getD1()))
-                            .collect(Collectors.toSet()).size() < group.size())
-                    {
-                        throw new ExecutionException("multiple bots on region edge");
-                    }
-                    region.coordinates().forEach(c2 -> {
-                        if (cmd.getOp() == Command.Op.GFILL) {
-                            if (matrix.fill(c2)) {
-                                energy += 12;
-                            } else {
-                                energy += 6;
-                            }
-                        } else {
-                            if (matrix.unfill(c2)) {
-                                energy -= 12;
-                            } else {
-                                energy += 3;
-                            }
-                        }
-                    });
+                    performGVoidGFill(group);
                     break;
                 default:
                     throw new AssertionError();
@@ -230,6 +127,155 @@ public class State {
         }
         steps++;
         return true;
+    }
+
+    private void performGVoidGFill(List<BotCommand> group) {
+        BotCommand bc = group.get(0);
+        Coordinate c = bc.bot.getPos();
+        Command cmd = bc.command;
+        Coordinate c1 = c.plus(cmd.getD1());
+        Region region = Region.of(c1, c1.plus(cmd.getD2()));
+        if (group.size() != (1 << region.dim())) {
+            throw new ExecutionException(cmd + ": GFill/GVoid mismatch: region "
+                    + region + ", dim " + region.dim()
+                    + ", but group size " + group.size()
+                    + " (expected " + (1 << region.dim()) + ")");
+        }
+        if (group.stream().anyMatch(x -> x.command.getOp() != cmd.getOp())) {
+            throw new ExecutionException(cmd + ": mixture of GFill and GVoid");
+        }
+        if (!region.isValid(getResolution())) {
+            throw new ExecutionException(cmd + ": invalid region: " + region);
+        }
+        if (group.stream().anyMatch(bc1 -> region.contains(bc1.bot.getPos()))) {
+            throw new ExecutionException(cmd + ": bot inside region");
+        }
+        if (group.stream().map(x -> x.bot.getPos().plus(x.command.getD1()))
+                .collect(Collectors.toSet()).size() < group.size())
+        {
+            throw new ExecutionException("multiple bots on region edge");
+        }
+        region.coordinates().forEach(c2 -> {
+            if (cmd.getOp() == Command.Op.GFILL) {
+                if (matrix.fill(c2)) {
+                    energy += 12;
+                } else {
+                    energy += 6;
+                }
+            } else {
+                if (matrix.unfill(c2)) {
+                    energy -= 12;
+                } else {
+                    energy += 3;
+                }
+            }
+        });
+    }
+
+    private void performFusion(List<BotCommand> group) {
+        BotCommand bc = group.get(0);
+        Command cmd = bc.command;
+        Nanobot bot = bc.bot;
+        if (group.size() != 2) {
+            throw new ExecutionException(cmd + ": invalid fusion group size (bots=" + bots.size() + "): " + group.size());
+        }
+        BotCommand bcs;
+        if (cmd.getOp() == Command.Op.FUSIONP) {
+            bcs = group.get(1);
+        } else {
+            bcs = bc;
+            bc = group.get(1);
+            bot = bc.bot;
+        }
+        bots.remove(bcs.bot);
+        bot.fuseWith(bcs.bot);
+        energy -= 24;
+    }
+
+    private void performFission(BotCommand bc) {
+        Nanobot bot = bc.bot;
+        Command cmd = bc.command;
+        Difference nd = cmd.getD1();
+        int m = cmd.getM();
+        int n = bot.getSeeds().size();
+        if (n == 0 || n <= m) {
+            throw new ExecutionException(cmd + ": too few seeds");
+        }
+        Coordinate c1 = bot.getPos().plus(nd);
+        if (!matrix.isValid(c1)) {
+            throw new ExecutionException(cmd + ": bot fissured out of matrix: " + bot);
+        }
+        if (matrix.isFull(c1)) {
+            throw new ExecutionException(cmd + ": bot fissured on full voxel: " + c1);
+        }
+        bots.add(bot.fissure(c1, m));
+        energy += 24;
+    }
+
+    private void performVoid(BotCommand bc) {
+        Coordinate c1 = bc.bot.getPos().plus(bc.command.getD1());
+        if (matrix.unfill(c1)) {
+            energy -= 12;
+        } else {
+            energy += 3;
+        }
+    }
+
+    private void performFill(BotCommand bc) {
+        Coordinate c1 = bc.bot.getPos().plus(bc.command.getD1());
+        if (matrix.fill(c1)) {
+            energy += 12;
+        } else {
+            energy += 6;
+        }
+    }
+
+    private void performLMove(BotCommand bc) {
+        Nanobot bot = bc.bot;
+        Command cmd = bc.command;
+        bot.setPos(bot.getPos().plus(cmd.getD1()).plus(cmd.getD2()));
+        if (!matrix.isValid(bot.getPos())) {
+            throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
+        }
+        if (matrix.isFull(bot.getPos())) {
+            throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
+        }
+        energy += 2L * (cmd.getD1().mlen() + 2 + cmd.getD2().mlen());
+    }
+
+    private void performSMove(BotCommand bc) {
+        Nanobot bot = bc.bot;
+        Command cmd = bc.command;
+        bot.setPos(bot.getPos().plus(cmd.getD1()));
+        if (!matrix.isValid(bot.getPos())) {
+            throw new ExecutionException(cmd + ": bot moved out of matrix: " + bot);
+        }
+        if (matrix.isFull(bot.getPos())) {
+            throw new ExecutionException(cmd + ": bot moved on full voxel: " + bot);
+        }
+        energy += 2L * cmd.getD1().mlen();
+    }
+
+    private void flipHarmonics() {
+        if (harmonics == HarmonicsState.LOW) {
+            harmonics = HarmonicsState.HIGH;
+        } else {
+            harmonics = HarmonicsState.LOW;
+        }
+    }
+
+    private void performHalt(BotCommand bc) {
+        Coordinate c = bc.bot.getPos();
+        if (!c.isOrigin()) {
+            throw new ExecutionException("halting bot not at origin: " + c);
+        }
+        if (bots.size() != 1) {
+            throw new ExecutionException("halting bot must be last bot: " + bots.size());
+        }
+        if (harmonics != HarmonicsState.LOW) {
+            throw new ExecutionException("harmonics mut be LOW at halt: " + harmonics);
+        }
+        bots.clear();
     }
 
     private static class BotCommand {
@@ -251,7 +297,7 @@ public class State {
         private final Coordinate fusion;
         private final Region region;
 
-        public GroupKey(BotCommand bc) {
+        GroupKey(BotCommand bc) {
             Nanobot bot = bc.bot;
             Command cmd = bc.command;
             switch (cmd.getOp()) {

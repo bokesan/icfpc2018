@@ -155,14 +155,6 @@ public class Optimizer {
      * @param result the list of commands to update
      */
     public static void optimizeBotWaits(int numSteps, int numBots, List<Command> result) {
-        //todo be smarter about this
-        // if any flip is contained, we do nothing to not mess up harmonic state
-        for (int i = result.size() - 1; i > (result.size() - 1 - (numSteps * numBots)); i--) {
-            if (result.get(i).equals(Command.FLIP)) {
-                return;
-            }
-        }
-
         Command moves[][] = new Command[numSteps][numBots];
         //move commands from results to array
         for (int i = numSteps - 1; i >= 0; i--) {
