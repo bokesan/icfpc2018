@@ -25,7 +25,10 @@ public class Command {
         FISSION,
         FILL,
         FUSIONP,
-        FUSIONS
+        FUSIONS,
+        VOID,
+        GFILL,
+        GVOID
     }
 
     private final Op op;
@@ -48,52 +51,80 @@ public class Command {
     }
 
     public static Command sMove(Difference lld) {
-        if (!lld.isLongLinear()) {
-            throw new IllegalArgumentException("not an lld: " + lld);
-        }
+        mustBeLongLinear(lld);
         return new Command(Op.SMOVE, lld, null, 0);
     }
 
     public static Command lMove(Difference sld1, Difference sld2) {
-        if (!sld1.isShortLinear()) {
-            throw new IllegalArgumentException("not a sld: " + sld1);
-        }
-        if (!sld2.isShortLinear()) {
-            throw new IllegalArgumentException("not a sld: " + sld2);
-        }
+        mustBeShortLinear(sld1);
+        mustBeShortLinear(sld2);
         return new Command(Op.LMOVE, sld1, sld2, 0);
     }
 
     public static Command fission(Difference nd, int m) {
-        if (!nd.isNear()) {
-            throw new IllegalArgumentException("not near: " + nd);
-        }
-        if (m < 0) {
-            throw new IllegalArgumentException("m must be non-negative: " + m);
+        mustBeNear(nd);
+        if (m < 0 || m > 255) {
+            throw new IllegalArgumentException("m out of range: " + m);
         }
         return new Command(Op.FISSION, nd, null, m);
     }
 
     public static Command fill(Difference nd) {
-        if (!nd.isNear()) {
-            throw new IllegalArgumentException("not near: " + nd);
-        }
+        mustBeNear(nd);
         return new Command(Op.FILL, nd, null, 0);
     }
 
     public static Command fusionP(Difference nd) {
-        if (!nd.isNear()) {
-            throw new IllegalArgumentException("not near: " + nd);
-        }
+        mustBeNear(nd);
         return new Command(Op.FUSIONP, nd, null, 0);
     }
 
     public static Command fusionS(Difference nd) {
-        if (!nd.isNear()) {
-            throw new IllegalArgumentException("not near: " + nd);
-        }
+        mustBeNear(nd);
         return new Command(Op.FUSIONS, nd, null, 0);
     }
+
+    public static Command void_(Difference nd) {
+        mustBeNear(nd);
+        return new Command(Op.VOID, nd, null, 0);
+    }
+
+    public static Command gFill(Difference nd, Difference fd) {
+        mustBeNear(nd);
+        mustBeFar(fd);
+        return new Command(Op.GFILL, nd, fd, 0);
+    }
+
+    public static Command gVoid(Difference nd, Difference fd) {
+        mustBeNear(nd);
+        mustBeFar(fd);
+        return new Command(Op.GVOID, nd, fd, 0);
+    }
+
+    private static void mustBeShortLinear(Difference d) {
+        if (!d.isShortLinear()) {
+            throw new IllegalArgumentException("short linear difference required, but got " + d);
+        }
+    }
+
+    private static void mustBeLongLinear(Difference d) {
+        if (!d.isLongLinear()) {
+            throw new IllegalArgumentException("long linear difference required, but got " + d);
+        }
+    }
+
+    private static void mustBeNear(Difference d) {
+        if (!d.isNear()) {
+            throw new IllegalArgumentException("near difference required, but got " + d);
+        }
+    }
+
+    private static void mustBeFar(Difference d) {
+        if (!d.isNear()) {
+            throw new IllegalArgumentException("far difference required, but got " + d);
+        }
+    }
+
 
     public Op getOp() {
         return op;
@@ -136,6 +167,9 @@ public class Command {
             case FILL: return "Fill " + d1;
             case FUSIONP: return "FusionP " + d1;
             case FUSIONS: return "FusionS " + d1;
+            case VOID: return "Void " + d1;
+            case GFILL: return "GFill " + d1 + " " + d2;
+            case GVOID: return "GVoid " + d1 + " " + d2;
             default:
                 throw new AssertionError();
         }
@@ -167,27 +201,58 @@ public class Command {
             case FILL:
                 out.write((encodeNd(d1) << 3) | 0b011);
                 break;
+            case VOID:
+                out.write((encodeNd(d1) << 3) | 0b010);
+                break;
+            case GFILL:
+                out.write((encodeNd(d1) << 3) | 0b001);
+                writeFarDistance(out, d2);
+                break;
+            case GVOID:
+                out.write(encodeNd(d1) << 3);
+                writeFarDistance(out, d2);
+                break;
             default:
                 throw new AssertionError();
         }
     }
 
-    private int encodeNd(Difference nd) {
+    private static int encodeNd(Difference nd) {
         return 9 * (nd.getDx() + 1) + 3 * (nd.getDy() + 1) + (nd.getDz() + 1);
+    }
+
+    private static void writeFarDistance(OutputStream out, Difference d) throws IOException {
+        out.write(d.getDx() + 30);
+        out.write(d.getDy() + 30);
+        out.write(d.getDz() + 30);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Command other = (Command) o;
-
         if (op != other.op) return false;
-        if (d1 != null && !d1.equals(other.d1)) return false;
-        if (m != other.m) return false;
-        if (d2 != null && !d2.equals(other.d2)) return false;
-        return true;
+        switch (op) {
+            case HALT:
+            case WAIT:
+            case FLIP:
+                return true;
+            case FISSION:
+                return m == other.m && d1.equals(other.d1);
+            case FILL:
+            case VOID:
+            case SMOVE:
+            case FUSIONP:
+            case FUSIONS:
+                return d1.equals(other.d1);
+            case LMOVE:
+            case GFILL:
+            case GVOID:
+                return d1.equals(other.d1) && d2.equals(other.d2);
+            default:
+                throw new AssertionError();
+        }
     }
 
     @Override

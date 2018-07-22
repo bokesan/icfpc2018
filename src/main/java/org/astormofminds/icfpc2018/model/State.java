@@ -127,6 +127,14 @@ public class State {
                         energy += 6;
                     }
                     break;
+                case VOID:
+                    c1 = c.plus(cmd.getD1());
+                    if (matrix.unfill(c1)) {
+                        energy -= 12;
+                    } else {
+                        energy += 3;
+                    }
+                    break;
                 case FISSION:
                     Difference nd = cmd.getD1();
                     int m = cmd.getM();
@@ -158,6 +166,11 @@ public class State {
                     bot.fuseWith(bcs.bot);
                     energy -= 24;
                     break;
+                case GFILL:
+                case GVOID:
+                    // TODO
+                default:
+                    throw new AssertionError();
             }
         }
         steps++;

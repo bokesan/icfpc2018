@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -182,6 +185,13 @@ public class Main {
                     System.out.format("%5d: %s%n", i, trace.get(i));
                 }
             }
+            System.out.format("Total number of commands: %d%n", n);
+            trace.stream()
+                 .collect(Collectors.groupingBy(Command::getOp, Collectors.counting()))
+                 .entrySet()
+                 .stream()
+                 .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                 .forEach(e -> System.out.format("%10d %s%n", e.getValue(), e.getKey()));
         }
     }
 
