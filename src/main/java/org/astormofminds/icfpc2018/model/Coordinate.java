@@ -2,6 +2,8 @@ package org.astormofminds.icfpc2018.model;
 
 public class Coordinate {
 
+    public static final int MAX_RESOLUTION = 250;
+
     public static final Coordinate ORIGIN = new Coordinate(0, 0, 0);
 
     private final int x;
@@ -72,6 +74,15 @@ public class Coordinate {
         return (x == c.x && y == c.y && Math.abs(z - c.z) == 1) ||
                (x == c.x && Math.abs(y - c.y) == 1 && z == c.z) ||
                (Math.abs(x - c.x) == 1 && z == c.z && y == c.y);
+    }
+
+    /**
+     * Is this coordinate valid in a given resolution?
+     */
+    public boolean isValid(int resolution) {
+        return x >= 0 && x < resolution
+            && y >= 0 && y < resolution
+            && z >= 0 && z < resolution;
     }
 
     @Override
