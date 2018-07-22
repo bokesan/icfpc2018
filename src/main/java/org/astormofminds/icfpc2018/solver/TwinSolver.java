@@ -33,14 +33,14 @@ class TwinSolver implements Solver {
         //split the matrix in half
         int midX = target.getResolution() / 2;
         Matrix leftMatrix = target.getHalf(0, midX - 1);
-        Matrix rightMatrix = target.getHalf(midX, target.getResolution() -1);
+        Matrix rightMatrix = target.getHalf(midX - 1, target.getResolution() -1);
         //fork the bot, move the second on to its starting point
         result.add(Command.fission(Difference.of(1, 0, 0), 10));
         //move second bot to its starting position, bot 1 waits
         int x = 1;
-        while(x < midX) {
+        while(x < midX - 1) {
             result.add(Command.WAIT);
-            int distance = Math.min(15, midX - x);
+            int distance = Math.min(15, midX - 1 - x);
             result.add(Command.sMove(Difference.of(distance, 0, 0)));
             x += distance;
         }
@@ -105,7 +105,7 @@ class TwinSolver implements Solver {
             }
         }
         //move second bot back
-        x = midX;
+        x = midX - 1;
         while(x > 1) {
             if (combinedHigh) {
                 combinedHigh = false;
