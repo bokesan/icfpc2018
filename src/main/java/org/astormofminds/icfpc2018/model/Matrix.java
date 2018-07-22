@@ -120,14 +120,16 @@ public class Matrix {
     }
 
     private void ground(Coordinate c) {
-        if (isValid(c) && isFull(c) && !isGrounded(c)) {
+        while (isValid(c) && isFull(c) && !isGrounded(c)) {
             grounded.set(index(c));
-            ground(c.below());
-            ground(c.above());
-            ground(c.before());
-            ground(c.behind());
-            ground(c.left());
-            ground(c.right());
+            if (c.getY() > 0) {
+                ground(c.below());
+                ground(c.before());
+                ground(c.behind());
+                ground(c.left());
+                ground(c.right());
+            }
+            c = c.above();
         }
     }
 
@@ -137,8 +139,8 @@ public class Matrix {
      */
     private void postClear(Coordinate c) {
         grounded.clear();
-        for (int x = 0; x < resolution; x++) {
-            for (int z = 0; z < resolution; z++) {
+        for (int x = 1; x < resolution - 1; x++) {
+            for (int z = 1; z < resolution - 1; z++) {
                 Coordinate c0 = Coordinate.of(x, 0, z);
                 ground(c0);
             }
