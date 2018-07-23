@@ -17,8 +17,8 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     private static final boolean PARALLEL = false;
-    private static final boolean TEST_DEFAULT_TRACE = false;
-    private static final boolean STOP_ON_ERROR = true;
+    private static final boolean TEST_DEFAULT_TRACE = true;
+    private static final boolean STOP_ON_ERROR = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -51,7 +51,7 @@ public class Main {
                 if (args.length != 5) {
                     usage(1);
                 }
-                solveAll(args[1], args[2], args[3], args[4].split(","));
+                solveAll(ProblemMode.of(args[1]), args[2], args[3], args[4].split(","));
                 break;
             default:
                 usage(1);
@@ -81,10 +81,10 @@ public class Main {
         Binary.writeTrace(traceFile, trace);
     }
 
-    private static void solveAll(String problemFolder, String problemPrefix, String traceFolder, String[] solverNames) throws IOException {
+    private static void solveAll(ProblemMode mode, String problemFolder, String traceFolder, String[] solverNames) throws IOException {
         long startTime = System.nanoTime();
         File targetDir = new File(problemFolder);
-        File[] targets = targetDir.listFiles((dir, name) -> name.startsWith(problemPrefix) && name.endsWith(".mdl"));
+        File[] targets = targetDir.listFiles((dir, name) -> name.matches(mode.getFileRegex()));
         if (!PARALLEL) {
             Arrays.sort(targets);
         }
@@ -102,7 +102,7 @@ public class Main {
         }
         fileStream.map(t -> {
                     try {
-                        return solveProblem(traceFolder, solverNames, t);
+                        return solveProblem(mode, traceFolder, solverNames, t);
                     } catch (IOException e) {
                         logger.error("IO Exception", e);
                         return t.getName() + ": " + e;
@@ -114,35 +114,51 @@ public class Main {
     }
 
     enum ProblemMode {
-        ASSEMBLE,
-        DESTRUCT,
-        RECONSTRUCT;
+        ASSEMBLE("FA..._tgt.mdl"),
+        DESTRUCT("FD..._src.mdl"),
+        RECONSTRUCT("FR..._src.mdl");
 
-        static ProblemMode of(char c) {
-            switch (c) {
-                case 'A': return ASSEMBLE;
-                case 'D': return DESTRUCT;
-                case 'R': return RECONSTRUCT;
+        private final String fileRegex;
+
+        private ProblemMode(String fileRegex) {
+            this.fileRegex = fileRegex;
+        }
+
+        String getFileRegex() {
+            return fileRegex;
+        }
+
+        static ProblemMode of(String s) {
+            switch (s) {
+                case "A": return ASSEMBLE;
+                case "D": return DESTRUCT;
+                case "R": return RECONSTRUCT;
                 default:
-                    throw new IllegalArgumentException("invalid mode: " + c);
+                    throw new IllegalArgumentException("invalid problem mode: " + s);
             }
         }
     }
 
-    private static String solveProblem(String traceFolder, String[] solverNames, File target) throws IOException {
-        String id = target.getName();
-        id = id.substring(0, id.length() - 8);
-        ProblemMode mode = ProblemMode.of(id.charAt(1));
+    private static String solveProblem(ProblemMode mode, String traceFolder, String[] solverNames, File modelFile) throws IOException {
+        String id = modelFile.getName().substring(0, 5);
         String traceFile = traceFolder + "/" + id + ".nbt";
-        try (InputStream in = new BufferedInputStream(new FileInputStream(target));
+        try (InputStream in = new BufferedInputStream(new FileInputStream(modelFile));
              InputStream tin = new BufferedInputStream(new FileInputStream(traceFile))
         ) {
             Matrix model = Binary.readModel(in);
+            Matrix reconstructionTarget = null;
+            if (mode == ProblemMode.RECONSTRUCT) {
+                String tgt = id + "_tgt.mdl";
+                File targetFile = new File(modelFile.getParent(), tgt);
+                try (InputStream in2 = new BufferedInputStream(new FileInputStream(targetFile))) {
+                    reconstructionTarget = Binary.readModel(in2);
+                }
+            }
             long bestEnergy = Long.MAX_VALUE;
             String bestSolver = "-";
             if (TEST_DEFAULT_TRACE) {
                 List<Command> defaultTrace = Binary.readTrace(tin);
-                State dfltResult = execute(id, "default", mode, model, defaultTrace);
+                State dfltResult = execute(id, "default", mode, model, reconstructionTarget, defaultTrace);
                 if (dfltResult == null) {
                     return id + ": invalid default trace";
                 }
@@ -169,8 +185,13 @@ public class Main {
                             trace = solver.getCompleteTrace();
                         }
                         break;
+                    case RECONSTRUCT:
+                        if (solver.initReconstruct(model, reconstructionTarget)) {
+                            trace = solver.getCompleteTrace();
+                        }
+                        break;
                     default:
-                        throw new AssertionError("not implemented");
+                        throw new AssertionError();
                 }
                 State result;
                 if (trace == null) {
@@ -180,7 +201,7 @@ public class Main {
                     long elapsed = System.nanoTime() - startTime;
                     logger.info("generate trace for {} with solver {}: {}s", id, solverName,
                             String.format("%.3f", elapsed / 1.0e9));
-                    result = execute(id, solverName, mode, model, trace);
+                    result = execute(id, solverName, mode, model, reconstructionTarget, trace);
                 }
                 if (result == null) {
                     if (trace != null && STOP_ON_ERROR) {
@@ -212,7 +233,7 @@ public class Main {
         System.out.println("  help                  show this help text");
         System.out.println("  check <file>          decode file and show content");
         System.out.println("  exec <model> <trace>  execute trace on model");
-        System.out.println("  checkAll <problemsFolder> <prefix> <tracesFolder> solver1,solver2,...  run all solvers on all problems strating with prefix");
+        System.out.println("  checkAll A|D|R <problemsFolder> <tracesFolder> solver1,solver2,...  run all solvers on all problems strating with prefix");
         System.exit(exitCode);
     }
 
@@ -273,12 +294,12 @@ public class Main {
         try (InputStream ms = new BufferedInputStream(new FileInputStream(modelFile));
              InputStream ts = new BufferedInputStream(new FileInputStream(traceFile))) {
             String id = new File(modelFile).getName().substring(0, 5);
-            ProblemMode mode = ProblemMode.of(id.charAt(1));
+            ProblemMode mode = ProblemMode.of(id.substring(1, 2));
             logger.info("loading target model...");
             Matrix model = Binary.readModel(ms);
             logger.info("loading trace...");
             List<Command> trace = Binary.readTrace(ts);
-            State state = execute(id, "-", mode, model, trace);
+            State state = execute(id, "-", mode, model, null, trace);
             if (state != null) {
                 System.out.println("Trace correct.");
             } else {
@@ -288,7 +309,7 @@ public class Main {
         }
     }
 
-    private static State execute(String problemId, String solver, ProblemMode mode, Matrix model, List<Command> trace) {
+    private static State execute(String problemId, String solver, ProblemMode mode, Matrix model, Matrix reconstructionTarget, List<Command> trace) {
         long startTime = System.nanoTime();
         try {
             State state;
@@ -299,6 +320,10 @@ public class Main {
                 case DESTRUCT:
                     state = new State(trace, new Matrix(model));
                     break;
+                case RECONSTRUCT:
+                    state = new State(trace, new Matrix(model));
+                    model = reconstructionTarget;
+                    break;
                 default:
                     throw new AssertionError();
             }
@@ -307,6 +332,7 @@ public class Main {
             boolean validResult = true;
             switch (mode) {
                 case ASSEMBLE:
+                case RECONSTRUCT:
                     if (state.getHarmonics() == HarmonicsState.LOW && !state.getMatrix().allGrounded()) {
                         logger.error("Not all grounded in low harmonics");
                         validResult = false;

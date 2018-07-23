@@ -14,7 +14,12 @@ public class SolverFactory {
             case "zapper": return new Zapper();
             case "reconstructor": return new Reconstructor();
             case "multivoid": return new MultiVoid();
-            default: throw new SolverNotFoundException();
+            default:
+                String[] solvers = name.split("\\+");
+                if (solvers.length == 2) {
+                    return new CombinedSolver(byName(solvers[0]), byName(solvers[1]));
+                }
+                throw new SolverNotFoundException();
         }
     }
 }
