@@ -18,7 +18,10 @@ public class Main {
 
     private static final boolean PARALLEL = true;
     private static final boolean TEST_DEFAULT_TRACE = false;
-    private static final boolean STOP_ON_ERROR = false;
+    private static final boolean STOP_ON_ERROR = true;
+
+    private static final String[] AUTO_DESTRUCT = { "zapper", "eatswarm2", "multivoid" };
+    private static final String[] AUTO_CONSTRUCT = { "swarm2", "surround2", "lhmulti" };
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -94,6 +97,9 @@ public class Main {
         }
         for (String solver : solverNames) {
             System.out.print(";" + solver);
+        }
+        if (mode == ProblemMode.RECONSTRUCT) {
+            System.out.print(";autoCombo");
         }
         System.out.println(";bestSolver;bestEnergy");
         Stream<File> fileStream = Arrays.stream(targets);
@@ -218,6 +224,56 @@ public class Main {
                         bestTrace = trace;
                     }
                 }
+            }
+            if (mode == ProblemMode.RECONSTRUCT) {
+                // Special auto-combo mode
+
+                // Find best destructor
+                String bestDSolverName = null;
+                List<Command> bestDSolveTrace = null;
+                long bestDSolveEnergy = Long.MAX_VALUE;
+                for (String dSolverName : AUTO_DESTRUCT) {
+                    Solver dSolver = SolverFactory.byName(dSolverName);
+                    if (dSolver.initDeconstruct(new Matrix(model))) {
+                        List<Command> trace = dSolver.getCompleteTrace();
+                        State result = execute(id, dSolverName, ProblemMode.DESTRUCT, model, null, trace);
+                        if (result != null && result.getEnergy() < bestDSolveEnergy) {
+                            bestDSolverName = dSolverName;
+                            bestDSolveEnergy = result.getEnergy();
+                            bestDSolveTrace = trace;
+                        }
+                    }
+                }
+                long totalEnergy = 0;
+                if (bestDSolverName != null) {
+                    // find best assembler
+                    String bestAsmName = null;
+                    List<Command> bestAsmTrace = null;
+                    long bestAsmEnergy = Long.MAX_VALUE;
+                    for (String asmName : AUTO_CONSTRUCT) {
+                        Solver asm = SolverFactory.byName(asmName);
+                        if (asm.initAssemble(new Matrix(reconstructionTarget))) {
+                            List<Command> trace = asm.getCompleteTrace();
+                            State result = execute(id, asmName, ProblemMode.ASSEMBLE, reconstructionTarget, null, trace);
+                            if (result != null && result.getEnergy() < bestAsmEnergy) {
+                                bestAsmName = asmName;
+                                bestAsmEnergy = result.getEnergy();
+                                bestAsmTrace = trace;
+                            }
+                        }
+                    }
+                    if (bestAsmName != null) {
+                        totalEnergy = bestDSolveEnergy + bestAsmEnergy;
+                        if (totalEnergy < bestEnergy) {
+                            bestEnergy = totalEnergy;
+                            bestDSolveTrace.remove(bestDSolveTrace.size() - 1);
+                            bestDSolveTrace.addAll(bestAsmTrace);
+                            bestTrace = bestDSolveTrace;
+                            bestSolver = bestDSolverName + "+" + bestAsmName;
+                        }
+                    }
+                }
+                r += String.format(";%d", totalEnergy);
             }
             if (bestTrace != null) {
                 Binary.writeTrace("out/" + id + ".nbt", bestTrace);
