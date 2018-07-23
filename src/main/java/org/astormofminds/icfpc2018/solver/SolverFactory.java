@@ -9,6 +9,7 @@ public class SolverFactory {
             case "lhmulti": return new LHMultiFiller();
             case "twin": return new TwinSolver();
             case "swarm2": return new Swarm2();
+            case "swarm3": return new Swarm3();
             case "surround2": return new Surround2();
             case "eatswarm2": return new Eating2();
             case "zapper": return new Zapper();
