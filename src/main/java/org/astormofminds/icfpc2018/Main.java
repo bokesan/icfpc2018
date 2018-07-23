@@ -264,6 +264,9 @@ public class Main {
                     }
                     if (bestAsmName != null) {
                         totalEnergy = bestDSolveEnergy + bestAsmEnergy;
+                        // correct energy for removed Halt command
+                        int res = model.getResolution();
+                        totalEnergy -= 20 + 3L * res * res * res;
                         if (totalEnergy < bestEnergy) {
                             bestEnergy = totalEnergy;
                             bestDSolveTrace.remove(bestDSolveTrace.size() - 1);
