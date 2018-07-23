@@ -14,6 +14,7 @@ public class SolverFactory {
             case "eatswarm2": return new Eating2();
             case "eatswarm3": return new Eating3();
             case "zapper": return new Zapper();
+            case "xzapper": return new XZapper();
             case "reconstructor": return new Reconstructor();
             case "multivoid": return new MultiVoid();
             default:
