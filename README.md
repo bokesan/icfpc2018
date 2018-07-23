@@ -20,7 +20,7 @@ TODO
 ### Why we deserve the judge's prize
 
 We probably don't. We did have a lot of ideas what to do - have a special mode
-where out solvers don't optimize for low energy, but generate nice bot movements,
+where our solvers don't optimize for low energy, but generate nice bot movements,
 e.g. a ballet or a aerobatic team flying through the Gateway Arch while trailing
 filled voxels (in high harmonics mode, of course). But alas, limited time prevented
 us from implementing this.
