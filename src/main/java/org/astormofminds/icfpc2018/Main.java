@@ -17,8 +17,8 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     private static final boolean PARALLEL = true;
-    private static final boolean TEST_DEFAULT_TRACE = false;
-    private static final boolean STOP_ON_ERROR = true;
+    private static final boolean TEST_DEFAULT_TRACE = true;
+    private static final boolean STOP_ON_ERROR = false;
 
     private static final String[] AUTO_DESTRUCT = { "zapper", "eatswarm2", "multivoid" };
     private static final String[] AUTO_CONSTRUCT = { "swarm2", "surround2", "lhmulti" };
