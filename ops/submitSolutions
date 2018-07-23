@@ -38,8 +38,9 @@ echo "status is ${STATUS}"
 echo "Submitting solutions via API..."
 
 curl -L \
-  --data-urlencode action=submit \
-  --data-urlencode privateID=${KEY} \
-  --data-urlencode submissionURL=${URL} \
-  --data-urlencode submissionSHA=${SHA} \
-  https://script.google.com/macros/s/AKfycbzQ7Etsj7NXCN5thGthCvApancl5vni5SFsb1UoKgZQwTzXlrH7/exec
+  --data-urlencode entry.1763695394=${KEY} \
+  --data-urlencode entry.1501594990=${URL} \
+  --data-urlencode entry.1453391049=${SHA} \
+  https://docs.google.com/forms/u/2/d/e/1FAIpQLSd0RMj0IUNsoVmhlQotcDVMZakK921zShK8H42zQJiweRhb4g/formResponse
+
+
