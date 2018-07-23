@@ -1,5 +1,7 @@
 package org.astormofminds.icfpc2018.model;
 
+import java.lang.ref.Reference;
+import java.sql.Ref;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -190,13 +192,12 @@ public class Matrix {
      * I'm too tired to do this efficiently.
      */
     private void postClear(Coordinate c) {
-        grounded.clear();
-        for (int x = 1; x < resolution - 1; x++) {
-            for (int z = 1; z < resolution - 1; z++) {
-                Coordinate c0 = Coordinate.of(x, 0, z);
-                ground(c0);
-            }
-        }
+        updateGrounded(c.above());
+        updateGrounded(c.behind());
+        updateGrounded(c.before());
+        updateGrounded(c.left());
+        updateGrounded(c.right());
+        updateGrounded(c.below());
     }
 
     /**
@@ -297,7 +298,6 @@ public class Matrix {
                         zmax = Math.max(zmax, z);
                     }
                 }
-
             }
         }
         if (xmax == 0) {
@@ -345,4 +345,52 @@ public class Matrix {
                 || c.getY() < 0 || c.getY() >= resolution
                 || c.getZ() < 0 || c.getZ() >= resolution);
     }
+
+
+    private static class BooleanRef {
+        boolean value = false;
+    }
+
+    private void updateGrounded(Coordinate c) {
+        if (isValid(c) && isFull(c)) {
+        /*
+        1) Initialize all vertices as not visited.
+        2) Do following for every vertex 'v'.
+          (a) If 'v' is not visited before, call DFSUtil(v)
+          (b) Print new line character
+
+       DFSUtil(v)
+         1) Mark 'v' as visited.
+         2) Print 'v'
+         3) Do following for every adjacent 'u' of 'v'.
+            If 'u' is not visited, then recursively call DFSUtil(u)
+         */
+            BitSet visited = new BitSet(voxels.length());
+            BooleanRef anyY0 = new BooleanRef();
+            getComponent1(visited, anyY0, c);
+            if (anyY0.value) {
+                // at least one on base, so all are grounded
+                grounded.or(visited);
+            } else {
+                // not grounded
+                grounded.and(visited);
+            }
+        }
+    }
+
+    private void getComponent1(BitSet visited, BooleanRef anyY0, Coordinate c) {
+        if (isValid(c) && isFull(c) && !visited.get(index(c))) {
+            visited.set(index(c));
+            if (c.getY() == 0) {
+                anyY0.value = true;
+            }
+            getComponent1(visited, anyY0, c.above());
+            getComponent1(visited, anyY0, c.below());
+            getComponent1(visited, anyY0, c.left());
+            getComponent1(visited, anyY0, c.right());
+            getComponent1(visited, anyY0, c.before());
+            getComponent1(visited, anyY0, c.behind());
+        }
+    }
+
 }
