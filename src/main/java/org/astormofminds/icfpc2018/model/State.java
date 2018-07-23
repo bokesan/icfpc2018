@@ -66,11 +66,13 @@ public class State {
      * {@code false} if the system is halted after the time step.
      */
     public boolean timeStep() {
+        /*
         if ((steps & 0x7fff) == 0 || logger.isDebugEnabled()) {
             if (!isWellFormed()) {
                 throw new ExecutionException("not well-formed");
             }
         }
+        */
         if (bots.isEmpty()) {
             throw new ExecutionException("system is halted");
         }

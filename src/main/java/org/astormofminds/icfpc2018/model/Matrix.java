@@ -8,6 +8,7 @@ public class Matrix {
     private final int resolution;
     private final BitSet voxels;
     private final BitSet grounded;
+    private boolean trackGrounded = true;
 
     public Matrix(int resolution) {
         this.resolution = resolution;
@@ -19,6 +20,13 @@ public class Matrix {
         this.resolution = source.getResolution();
         this.voxels = (BitSet) source.voxels.clone();
         this.grounded = (BitSet) source.grounded.clone();
+    }
+
+    public void setTrackGrounded(boolean track) {
+        if (track && !trackGrounded) {
+            recomputeGrounded();
+        }
+        trackGrounded = track;
     }
 
     public int getResolution() {
@@ -104,7 +112,8 @@ public class Matrix {
             return false;
         } else {
             voxels.set(i);
-            postFill(c);
+            if (trackGrounded)
+                postFill(c);
             return true;
         }
     }
@@ -123,8 +132,10 @@ public class Matrix {
             return false;
         } else {
             voxels.clear(i);
-            // postClear(c);
-            recomputeGrounded(c);
+            if (trackGrounded) {
+                // postClear(c);
+                recomputeGrounded();
+            }
             return true;
         }
     }
@@ -189,9 +200,9 @@ public class Matrix {
     }
 
     /**
-     * After
+     * Recompute grounded info for all voxels.
      */
-    private void recomputeGrounded(Coordinate c) {
+    private void recomputeGrounded() {
         grounded.clear();
 
         // set bottom

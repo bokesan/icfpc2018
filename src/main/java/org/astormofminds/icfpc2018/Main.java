@@ -16,8 +16,8 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final boolean PARALLEL = false;
-    private static final boolean TEST_DEFAULT_TRACE = true;
+    private static final boolean PARALLEL = true;
+    private static final boolean TEST_DEFAULT_TRACE = false;
     private static final boolean STOP_ON_ERROR = false;
 
     public static void main(String[] args) throws IOException {
@@ -329,8 +329,10 @@ public class Main {
                 default:
                     throw new AssertionError();
             }
+            state.getMatrix().setTrackGrounded(false);
             while (state.timeStep())
                 ;
+            state.getMatrix().setTrackGrounded(true);
             boolean validResult = true;
             switch (mode) {
                 case ASSEMBLE:
