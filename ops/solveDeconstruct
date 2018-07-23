@@ -1,0 +1,13 @@
+#!/bin/bash
+
+SOLVER=$1
+mkdir ~/git/icfpc2018/solutions/main/${SOLVER}
+echo "Created ~/git/icfpc2018/solutions/main/${SOLVER}"
+
+for file in /home/dreske/git/icfpc2018/task/deconstruct/*.mdl; do
+	[ -e "$file" ] || continue
+	TARGET=`echo ${file} | sed "s/.*\///" | cut -d'_' -f 1`
+	TARGET="/home/dreske/git/icfpc2018/solutions/main/${SOLVER}/${TARGET}.nbt"
+	java -Xms2g -Xss500m -jar /home/dreske/git/icfpc2018/build/libs/icfpc2018-0.0.1.jar solve ${file} ${TARGET} ${SOLVER}
+	echo "Created ${TARGET}"
+done

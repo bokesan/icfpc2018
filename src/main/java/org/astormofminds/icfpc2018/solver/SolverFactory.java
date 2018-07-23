@@ -19,6 +19,7 @@ public class SolverFactory {
             case "reconstructor": return new Reconstructor();
             case "multivoid": return new MultiVoid();
             case "stupidmultivoid": return new StupidMultiVoid();
+            case "arch": return new ArchSolver();
             default:
                 String[] solvers = name.split("\\+");
                 if (solvers.length == 2) {
