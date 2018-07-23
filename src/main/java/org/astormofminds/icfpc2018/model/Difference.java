@@ -35,6 +35,10 @@ public class Difference {
         return of(c.getX() - c1.getX(), c.getY() - c1.getY(), c.getZ() - c1.getZ());
     }
 
+    public Difference plus(Difference d) {
+        return of(getDx() + d.getDx(), getDy() + d.getDy(), getDz() + d.getDz());
+    }
+
     public boolean isZero() {
         return dx == 0 && dy == 0 && dz == 0;
     }

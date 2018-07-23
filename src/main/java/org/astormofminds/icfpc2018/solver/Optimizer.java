@@ -3,22 +3,27 @@ package org.astormofminds.icfpc2018.solver;
 import org.astormofminds.icfpc2018.model.Command;
 import org.astormofminds.icfpc2018.model.Difference;
 import org.astormofminds.icfpc2018.solver.exceptions.BrokenFillAndFlipOrderException;
+import org.astormofminds.icfpc2018.util.NavigableSequence;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class Optimizer {
 
     //this all just works based on the stupid / stupid bounding approach where single steps and layering are used
-    //todo: all these methods are probably super inefficient and could be made faster by being smarter
 
     public static void removeMoves(List<Command> cmds) {
-        int end = cmds.size();
-        int i = end - 3;
-        while (i >= 0) {
-            Command now = cmds.get(i);
-            Command next = cmds.get(i + 1);
-            Command afterNext = cmds.get(i + 2);
+        NavigableSequence<Command> seq = new NavigableSequence<>((ArrayList<Command>)cmds);
+        int curr = seq.getIndex(0);
+        while (!seq.isLast(curr)) {
+            Command now = seq.fetch(curr);
+            int i1 = seq.next(curr);
+            if (seq.isLast(i1))
+                break;
+            Command next = seq.fetch(i1);
+            int i2 = seq.next(i1);
+            Command afterNext = seq.fetch(i2);
             if (now.getOp() == Command.Op.SMOVE &&
                     afterNext.getOp() == Command.Op.SMOVE &&
                     (now.equals(Command.UP) && afterNext.equals(Command.DOWN) ||
@@ -29,86 +34,37 @@ public class Optimizer {
                             now.equals(Command.NEAR) && afterNext.equals(Command.FAR))
                     && next.getOp() != Command.Op.FILL)
             {
-                cmds.remove(i+2);
-                cmds.remove(i);
-                end -= 2;
-                i = Math.min(i, end - 3);
+                seq.remove(curr);
+                seq.remove(i2);
+                curr = i1;
+                if (!seq.isFirst(curr))
+                    curr = seq.prev(curr);
             } else {
-                i--;
+                curr = i1;
             }
         }
+        seq.compact();
     }
 
     public static void combineStraightMoves(List<Command> commands) {
-        boolean updated = true;
-        int start = 0;
-        while (updated) {
-            updated = false;
-            Command current = null;
-            int streak = 1;
-            for (int i = start; i < commands.size(); i++) {
-                if (commands.get(i).equals(current)) {
-                    streak++;
-                    if (streak == 15) {
-                        Command newCommand;
-                        if (current.equals(Command.DOWN)) {
-                            newCommand = Command.sMove(Difference.of(0, - streak, 0));
-                        } else if (current.equals(Command.UP)) {
-                            newCommand = Command.sMove(Difference.of(0, streak, 0));
-                        } else if (current.equals(Command.LEFT)) {
-                            newCommand = Command.sMove(Difference.of(- streak, 0, 0));
-                        } else if (current.equals(Command.RIGHT)) {
-                            newCommand = Command.sMove(Difference.of(streak, 0, 0));
-                        } else if (current.equals(Command.FAR)) {
-                            newCommand = Command.sMove(Difference.of(0, 0, streak));
-                        } else if (current.equals(Command.NEAR)) {
-                            newCommand = Command.sMove(Difference.of(0, 0, - streak));
-                        } else {
-                            current = null;
-                            streak = 1;
-                            continue;
-                        }
-                        for (int index = i - streak + 1; index <= i; index++) {
-                            commands.remove(i - streak + 1);
-                        }
-                        commands.add(i - streak + 1, newCommand);
-                        start = Math.max(i - streak + 1, 0);
-                        updated = true;
-                        break;
+        NavigableSequence<Command> seq = new NavigableSequence<>((ArrayList<Command>)commands);
+        int curr = seq.getIndex(0);
+        while (!seq.isLast(curr)) {
+            Command c1 = seq.fetch(curr);
+            curr = seq.next(curr);
+            if (c1.getOp() == Command.Op.SMOVE) {
+                Command c2 = seq.fetch(curr);
+                if (c2.getOp() == Command.Op.SMOVE) {
+                    Difference d = c1.getD1().plus(c2.getD1());
+                    if (d.isLongLinear()) {
+                        curr = seq.remove(curr);
+                        curr = seq.prev(curr);
+                        seq.put(curr, Command.sMove(d));
                     }
-                } else {
-                    if (streak > 1) {
-                        Command newCommand;
-                        if (current.equals(Command.DOWN)) {
-                            newCommand = Command.sMove(Difference.of(0, - streak, 0));
-                        } else if (current.equals(Command.UP)) {
-                            newCommand = Command.sMove(Difference.of(0, streak, 0));
-                        } else if (current.equals(Command.LEFT)) {
-                            newCommand = Command.sMove(Difference.of(- streak, 0, 0));
-                        } else if (current.equals(Command.RIGHT)) {
-                            newCommand = Command.sMove(Difference.of(streak, 0, 0));
-                        } else if (current.equals(Command.FAR)) {
-                            newCommand = Command.sMove(Difference.of(0, 0, streak));
-                        } else if (current.equals(Command.NEAR)) {
-                            newCommand = Command.sMove(Difference.of(0, 0, - streak));
-                        } else {
-                            current = commands.get(i);
-                            streak = 1;
-                            continue;
-                        }
-                        for (int index = i - streak; index < i; index++) {
-                            commands.remove(i - streak);
-                        }
-                        commands.add(i - streak, newCommand);
-                        start = Math.max(i - streak, 0);
-                        updated = true;
-                        break;
-                    }
-                    current = commands.get(i);
-                    streak = 1;
                 }
             }
         }
+        seq.compact();
     }
 
     public static void moveFlipsInward(List<Command> commands) {
