@@ -186,7 +186,9 @@ public class Main {
                         }
                         break;
                     case RECONSTRUCT:
-                        if (solver.initReconstruct(model, reconstructionTarget)) {
+                        Matrix src = new Matrix(model);
+                        Matrix tgt = new Matrix(reconstructionTarget);
+                        if (solver.initReconstruct(src, tgt)) {
                             trace = solver.getCompleteTrace();
                         }
                         break;
