@@ -18,10 +18,10 @@ public class Main {
 
     private static final boolean PARALLEL = true;
     private static final boolean TEST_DEFAULT_TRACE = false;
-    private static final boolean STOP_ON_ERROR = true;
+    private static final boolean STOP_ON_ERROR = false;
 
-    private static final String[] AUTO_DESTRUCT = { "zapper", "eatswarm2", "multivoid" };
-    private static final String[] AUTO_CONSTRUCT = { "swarm2", "surround2", "lhmulti" };
+    private static final String[] AUTO_DESTRUCT = { "zapper", "eatswarm2", "stupidmultivoid" };
+    private static final String[] AUTO_CONSTRUCT = { "swarm3", "surround2", "lhmulti" };
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
@@ -184,6 +184,8 @@ public class Main {
                 r += String.format(";%d", bestEnergy);
             }
             for (String solverName : solverNames) {
+                if (solverName.isEmpty())
+                    continue;
                 long startTime = System.nanoTime();
                 Solver solver = SolverFactory.byName(solverName);
                 List<Command> trace = null;

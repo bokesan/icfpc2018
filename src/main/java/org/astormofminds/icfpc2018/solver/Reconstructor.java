@@ -32,11 +32,7 @@ class Reconstructor implements Solver {
     public boolean initReconstruct(Matrix source, Matrix target) {
         currentMatrix = source;
         targetMatrix = target;
-        Region targetRegion = targetMatrix.getBoundingBox();
-        Region sourceRegion = currentMatrix.getBoundingBox();
-        int xmin = Math.min(sourceRegion.getMinX(), targetRegion.getMinX());
-        int xmax = Math.max(sourceRegion.getMaxX(), targetRegion.getMaxX());
-        return xmax - xmin <= 120;
+        return true;
     }
 
     @Override
@@ -58,11 +54,11 @@ class Reconstructor implements Solver {
         int ymax = Math.max(sourceRegion.getMaxY(), targetRegion.getMaxY());
         int zmax = Math.max(sourceRegion.getMaxZ(), targetRegion.getMaxZ());
 
-        //lets start by only caring about those where we can get away with one long line of bots
-        if (xmax - xmin > 120) {
-            result.add(Command.HALT);
-            return result;
-        }
+        int totalBots = (xmax - xmin + 1) / 3;
+        if ((xmax - xmin + 1) % 3 != 0) totalBots++;
+        int sweeps = totalBots / 40;
+        if (totalBots % 40 != 0) sweeps++;
+        int numBots = Math.min(40, totalBots);
 
         //move to starting point and one further right - we cover more ground
         while (posx < xmin + 1) {
@@ -86,9 +82,7 @@ class Reconstructor implements Solver {
         switchOff = false;
 
         //spawn bots
-        int numBotsToSpawn = (xmax - xmin + 1) / 3;
-        //if we cover it perfectly, we subtract on for the existing bot
-        if ((xmax - xmin + 1) % 3 == 0) numBotsToSpawn--;
+        int numBotsToSpawn = numBots - 1;
         if (numBotsToSpawn > 39) {
             result.add(Command.HALT);
             return result;
@@ -109,8 +103,103 @@ class Reconstructor implements Solver {
             }
             result.add(Command.sMove(Difference.of(2, 0, 0)));
         }
-        int numBots = numBotsToSpawn + 1;
 
+
+
+        for (int i = 0; i < sweeps; i++) {
+            correctAllLayers(ymin, zmin, ymax, zmax, numBots);
+            if (i + 1 < sweeps) {
+                numBots = moveBotsToNewStart(zmin, numBots);
+            }
+        }
+
+        //merge all bots through fusion
+        for (int i = numBots; i > 1; i--) {
+            //let the left ones wait while the right one moves left
+            for (int j = 1; j < i; j++) {
+                //let the left bots wait while we move the right one
+                addWait();
+            }
+            result.add(Command.sMove(Difference.of(-2, 0, 0)));
+
+            for (int j = 2; j < i; j++) {
+                //let the left bots wait while we fusion at the right
+                addWait();
+            }
+            //combine two
+            result.add(Command.fusionP(Difference.of(1, 0, 0)));
+            result.add(Command.fusionS(Difference.of(-1, 0, 0)));
+        }
+
+        //return home
+        while (posx > 0) {
+            int steps = Math.min(15, posx);
+            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
+            posx -= steps;
+        }
+        while (posz > 0) {
+            int steps = Math.min(15, posz);
+            result.add(Command.sMove(Difference.of(0, 0, -steps)));
+            posz -= steps;
+        }
+        while (posy > 0) {
+            int steps = Math.min(15, posy);
+            result.add(Command.sMove(Difference.of(0, -steps, 0)));
+            posy -= steps;
+        }
+        //end finally, stop
+        result.add(Command.HALT);
+
+        return result;
+    }
+
+    private int moveBotsToNewStart(int zmin, int numBots) {
+        int newX = posx + ((numBots) * 3);
+        while (newX + ((numBots - 1) * 3) > targetMatrix.getResolution() - 1) {
+            fuseOneBot(numBots);
+            numBots--;
+        }
+        while (posx < newX) {
+            int distance = Math.min(2, newX - posx);
+            for (int i = 0; i < numBots; i++) {
+                result.add(Command.sMove(Difference.ofX(distance)));
+            }
+            posx += distance;
+        }
+        while (posz > zmin) {
+            int distance = Math.min(15, posz - zmin);
+            for (int i = 0; i < numBots; i++) {
+                result.add(Command.sMove(Difference.ofZ(-distance)));
+            }
+            posz -= distance;
+        }
+        while (posy > 1) {
+            int distance = Math.min(15, posy - 1);
+            for (int i = 0; i < numBots; i++) {
+                result.add(Command.sMove(Difference.ofY(-distance)));
+            }
+            posy -= distance;
+        }
+        return numBots;
+    }
+
+    private void fuseOneBot(int numBots) {
+        for (int i = 1; i < numBots; i++) {
+            //let the left bots wait while we move the right one
+            addWait();
+        }
+        result.add(Command.sMove(Difference.of(-2, 0, 0)));
+
+        for (int i = 2; i < numBots; i++) {
+            //let the left bots wait while we fusion at the right
+            addWait();
+        }
+        //combine two
+        result.add(Command.fusionP(Difference.of(1, 0, 0)));
+        result.add(Command.fusionS(Difference.of(-1, 0, 0)));
+    }
+
+    private void correctAllLayers(int ymin, int zmin, int ymax, int zmax, int numBots) {
         //correct all layers
         boolean moveAway = true;
         for (int y = ymin + 1; y < ymax + 2; y += 3) {
@@ -158,45 +247,6 @@ class Reconstructor implements Solver {
                 }
             }
         }
-
-        //merge all bots through fusion
-        for (int i = numBots; i > 1; i--) {
-            //let the left ones wait while the right one moves left
-            for (int j = 1; j < i; j++) {
-                //let the left bots wait while we move the right one
-                addWait();
-            }
-            result.add(Command.sMove(Difference.of(-2, 0, 0)));
-
-            for (int j = 2; j < i; j++) {
-                //let the left bots wait while we fusion at the right
-                addWait();
-            }
-            //combine two
-            result.add(Command.fusionP(Difference.of(1, 0, 0)));
-            result.add(Command.fusionS(Difference.of(-1, 0, 0)));
-        }
-
-        //return home
-        while (posx > 0) {
-            int steps = Math.min(15, posx);
-            result.add(Command.sMove(Difference.of(-steps, 0, 0)));
-            posx -= steps;
-        }
-        while (posz > 0) {
-            int steps = Math.min(15, posz);
-            result.add(Command.sMove(Difference.of(0, 0, -steps)));
-            posz -= steps;
-        }
-        while (posy > 0) {
-            int steps = Math.min(15, posy);
-            result.add(Command.sMove(Difference.of(0, -steps, 0)));
-            posy -= steps;
-        }
-        //end finally, stop
-        result.add(Command.HALT);
-
-        return result;
     }
 
     private void addWait() {

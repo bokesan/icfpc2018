@@ -15,8 +15,10 @@ public class SolverFactory {
             case "eatswarm3": return new Eating3();
             case "zapper": return new Zapper();
             case "xzapper": return new XZapper();
+            case "zzapper": return new ZZapper();
             case "reconstructor": return new Reconstructor();
             case "multivoid": return new MultiVoid();
+            case "stupidmultivoid": return new StupidMultiVoid();
             default:
                 String[] solvers = name.split("\\+");
                 if (solvers.length == 2) {
