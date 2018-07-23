@@ -1,10 +1,11 @@
 package org.astormofminds.icfpc2018;
 
+import org.astormofminds.icfpc2018.io.Binary;
 import org.astormofminds.icfpc2018.model.Command;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import java.io.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -82,35 +83,54 @@ public class Combine {
             {"FR112","FD183","FA184"}
     };
 
-    private final Set<String> traces;
+    private final File[] traces;
 
     public Combine(File traceFolder) {
-        traces = new HashSet<>();
-        File[] traceFiles = traceFolder.listFiles((dir, name) -> name.endsWith(".nbt"));
-        for (File f : traceFiles) {
-            traces.add(f.getName());
+        traces = traceFolder.listFiles((dir, name) -> name.endsWith(".nbt"));
+    }
+
+    private File exists(String name) {
+        for (File f : traces) {
+            if (f.getName().equals(name)) {
+                return f;
+            }
         }
+        return null;
     }
 
-    private boolean exists(String name) {
-        return traces.contains(name);
-    }
-
-    public void combineAll() {
+    public void combineAll() throws IOException {
         for (String[] recon : COMBS) {
             combine(recon[0] + ".nbt", recon[1] + ".nbt", recon[2] + ".nbt");
         }
     }
 
-    private void combine(String dest, String decon, String asm) {
-        if (exists(dest)) {
+    private void combine(String dest, String decon, String asm) throws IOException {
+        File destFile = exists(dest);
+        if (destFile != null) {
             System.out.println(dest + " already exists");
-        }
-        else if (exists(decon) && exists(asm)) {
-            System.out.println(dest + ": combining possible");
-        }
-        else {
-            System.out.println(dest + ": missing traces");
+        } else {
+            File dFile = exists(decon);
+            File aFile = exists(asm);
+            if (dFile == null) {
+                System.out.println("missing destruct trace");
+            }
+            else if (aFile == null) {
+                System.out.println("missing assemble trace");
+            }
+            else {
+                System.out.println("combining...");
+                try (InputStream ds = new BufferedInputStream(new FileInputStream(dFile));
+                     InputStream as = new BufferedInputStream(new FileInputStream(aFile)))
+                {
+                    List<Command> dTrace = Binary.readTrace(ds);
+                    List<Command> aTrace = Binary.readTrace(as);
+                    dTrace.remove(dTrace.size() - 1);
+                    dTrace.addAll(aTrace);
+                    String fn = dFile.getParent() + "/" + dest;
+                    Binary.writeTrace(fn, dTrace);
+                    System.out.print("Wrote " + fn);
+                }
+            }
         }
     }
 
