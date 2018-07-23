@@ -135,6 +135,7 @@ public class Matrix {
         } else {
             voxels.clear(i);
             if (trackGrounded) {
+                // grounded.clear(i);
                 // postClear(c);
                 recomputeGrounded();
             }
@@ -193,11 +194,13 @@ public class Matrix {
      */
     private void postClear(Coordinate c) {
         updateGrounded(c.above());
-        updateGrounded(c.behind());
-        updateGrounded(c.before());
-        updateGrounded(c.left());
-        updateGrounded(c.right());
-        updateGrounded(c.below());
+        if (c.getY() > 0) {
+            updateGrounded(c.behind());
+            updateGrounded(c.before());
+            updateGrounded(c.left());
+            updateGrounded(c.right());
+            updateGrounded(c.below());
+        }
     }
 
     /**
@@ -367,6 +370,9 @@ public class Matrix {
          */
             BitSet visited = new BitSet(voxels.length());
             BooleanRef anyY0 = new BooleanRef();
+            if (c.getY() == 0) {
+                anyY0.value = true;
+            }
             getComponent1(visited, anyY0, c);
             if (anyY0.value) {
                 // at least one on base, so all are grounded
