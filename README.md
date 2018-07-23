@@ -25,7 +25,7 @@ combined and low harmonics when possible) and progressed to using fission and
 group commands later on.
 
 Our solvers performance is mostly limited by an inefficient way to maintain
-the information about which voxels are grounded. This caused use some pain
+the information about which voxels are grounded. This caused us some pain
 on the larger problems. For some problems we had to deactivate the slower solvers
 to generate valid traces in time.
 
@@ -35,7 +35,7 @@ We probably don't. We did have a lot of ideas what to do - have a special mode
 where our solvers don't optimize for low energy, but generate nice bot movements,
 e.g. a ballet or a aerobatic team flying through the Gateway Arch while trailing
 filled voxels (in high harmonics mode, of course). But alas, limited time prevented
-us from implementing this. A modest attempt is ''solutiions/arch.nbt'', to be used
+us from implementing this. A modest attempt is ''solutions/arch.nbt'', to be used
 with ''FD147_src.mdl''.
 
 ## Running
