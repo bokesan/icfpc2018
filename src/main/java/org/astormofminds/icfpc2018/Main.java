@@ -56,6 +56,13 @@ public class Main {
                 }
                 solveAll(ProblemMode.of(args[1]), args[2], args[3], args[4].split(","));
                 break;
+            case "combine":
+                if (args.length != 2) {
+                    usage(1);
+                }
+                Combine c = new Combine(new File(args[1]));
+                c.combineAll();
+                break;
             default:
                 usage(1);
         }

@@ -12,6 +12,7 @@ public class SolverFactory {
             case "swarm3": return new Swarm3();
             case "surround2": return new Surround2();
             case "eatswarm2": return new Eating2();
+            case "eatswarm3": return new Eating3();
             case "zapper": return new Zapper();
             case "reconstructor": return new Reconstructor();
             case "multivoid": return new MultiVoid();
