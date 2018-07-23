@@ -244,11 +244,18 @@ public class Main {
                     if (dSolver.initDeconstruct(new Matrix(model))) {
                         List<Command> trace = dSolver.getCompleteTrace();
                         State result = execute(id, dSolverName, ProblemMode.DESTRUCT, model, null, trace);
+                        if (result == null) {
+                            logger.warn("destruct {}: exec failed with solver {}", id, dSolverName);
+                        } else {
+                            logger.info("destruct {} with {}: {}", id, dSolverName, result.getEnergy());
+                        }
                         if (result != null && result.getEnergy() < bestDSolveEnergy) {
                             bestDSolverName = dSolverName;
                             bestDSolveEnergy = result.getEnergy();
                             bestDSolveTrace = trace;
                         }
+                    } else {
+                        logger.info("destruct {}: solver {} failed to initialize", id, dSolverName);
                     }
                 }
                 long totalEnergy = 0;
